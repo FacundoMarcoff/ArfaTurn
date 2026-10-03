@@ -68,26 +68,46 @@ export const CalendarPage: React.FC = () => {
 
   // Professionals for this branch
   const branchProfessionals = professionals.filter(
-    (p) => p.organization_id === currentOrg.id && (!p.branch_ids || p.branch_ids.includes(currentBranch.id))
+    (p) => p.organization_id === currentOrg.id
   );
 
-  // Appointments filtered by branch and date
-  const selectedDateStr = selectedDate.toISOString().split('T')[0];
+  // Helper to extract YYYY-MM-DD in local time (prevents UTC timezone shift)
+  const getLocalDateKey = (d: Date | string): string => {
+    const date = typeof d === 'string' ? new Date(d) : d;
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  const selectedDateStr = getLocalDateKey(selectedDate);
 
   const filteredAppointments = useMemo(() => {
+    return appointments
+      .filter((appt) => {
+        if (appt.organization_id !== currentOrg.id) return false;
+        if (appt.branch_id !== currentBranch.id) return false;
+        if (selectedProfFilter !== 'all' && appt.professional_id !== selectedProfFilter) return false;
+
+        // Filter by current date in day view
+        if (viewMode === 'day') {
+          const apptDateStr = getLocalDateKey(appt.starts_at);
+          return apptDateStr === selectedDateStr;
+        }
+        return true;
+      })
+      .sort((a, b) => new Date(a.starts_at).getTime() - new Date(b.starts_at).getTime());
+  }, [appointments, currentOrg.id, currentBranch.id, selectedProfFilter, viewMode, selectedDateStr]);
+
+  const otherDateAppointments = useMemo(() => {
     return appointments.filter((appt) => {
       if (appt.organization_id !== currentOrg.id) return false;
       if (appt.branch_id !== currentBranch.id) return false;
       if (selectedProfFilter !== 'all' && appt.professional_id !== selectedProfFilter) return false;
-
-      // Filter by current date in day view
-      if (viewMode === 'day') {
-        const apptDateStr = appt.starts_at.split('T')[0];
-        return apptDateStr === selectedDateStr;
-      }
-      return true;
+      const apptDateStr = getLocalDateKey(appt.starts_at);
+      return apptDateStr !== selectedDateStr && appt.status !== 'cancelled';
     });
-  }, [appointments, currentOrg.id, currentBranch.id, selectedProfFilter, viewMode, selectedDateStr]);
+  }, [appointments, currentOrg.id, currentBranch.id, selectedProfFilter, selectedDateStr]);
 
   // Date Navigation
   const handlePrevDay = () => {
@@ -281,36 +301,86 @@ export const CalendarPage: React.FC = () => {
         </div>
       )}
 
-      {/* Date Navigation & Professional Filter */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white dark:bg-[#201D1B] p-4 rounded-2xl border border-[#E8E2D8] dark:border-[#2D2825] shadow-xs">
-        <div className="flex items-center gap-2">
-          <button
-            onClick={handlePrevDay}
-            className="p-2 rounded-xl border border-[#E8E2D8] dark:border-[#2D2825] hover:bg-[#F7F3EC] dark:hover:bg-[#282421] transition"
-          >
-            <ChevronLeft className="w-4 h-4 text-stone-600 dark:text-stone-300" />
-          </button>
-          <button
-            onClick={handleToday}
-            className="px-3 py-1.5 rounded-xl border border-[#E8E2D8] dark:border-[#2D2825] text-xs font-semibold hover:bg-[#F7F3EC] dark:hover:bg-[#282421] transition"
-          >
-            Hoy
-          </button>
-          <button
-            onClick={handleNextDay}
-            className="p-2 rounded-xl border border-[#E8E2D8] dark:border-[#2D2825] hover:bg-[#F7F3EC] dark:hover:bg-[#282421] transition"
-          >
-            <ChevronRight className="w-4 h-4 text-stone-600 dark:text-stone-300" />
-          </button>
-
-          <div className="text-sm font-semibold text-stone-800 dark:text-stone-100 ml-2">
-            {selectedDate.toLocaleDateString('es-AR', {
-              weekday: 'long',
-              year: 'numeric',
-              month: 'long',
-              day: 'numeric',
-            })}
+      {/* Date Navigation, View Mode & Professional Filter */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white dark:bg-[#201D1B] p-4 rounded-2xl border border-[#E8E2D8] dark:border-[#2D2825] shadow-xs">
+        <div className="flex flex-wrap items-center gap-2">
+          {/* Toggle Vista Día / Todos los Turnos */}
+          <div className="flex items-center gap-1 bg-[#FAF7F2] dark:bg-[#1C1A19] p-1 rounded-xl border border-[#E8E2D8] dark:border-[#352F2B]">
+            <button
+              type="button"
+              onClick={() => setViewMode('day')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer flex items-center gap-1.5 ${
+                viewMode === 'day'
+                  ? 'bg-white dark:bg-[#282421] text-stone-900 dark:text-white shadow-2xs'
+                  : 'text-stone-500 hover:text-stone-900 dark:hover:text-stone-200'
+              }`}
+            >
+              <CalendarIcon className="w-3.5 h-3.5" />
+              <span>Vista Día</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewMode('list')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer flex items-center gap-1.5 ${
+                viewMode === 'list'
+                  ? 'bg-white dark:bg-[#282421] text-stone-900 dark:text-white shadow-2xs'
+                  : 'text-stone-500 hover:text-stone-900 dark:hover:text-stone-200'
+              }`}
+            >
+              <List className="w-3.5 h-3.5" />
+              <span>Todos los Turnos</span>
+              <span className="px-1.5 py-0.2 rounded-full bg-[#EBF2EE] dark:bg-[#203026] text-[#3B6652] dark:text-[#A1CEB5] text-[10px] font-black">
+                {appointments.filter((a) => a.organization_id === currentOrg.id && a.branch_id === currentBranch.id && a.status !== 'cancelled').length}
+              </span>
+            </button>
           </div>
+
+          {/* Navigation Controls (Visible in Day View) */}
+          {viewMode === 'day' && (
+            <div className="flex items-center gap-1.5">
+              <button
+                onClick={handlePrevDay}
+                className="p-1.5 rounded-xl border border-[#E8E2D8] dark:border-[#2D2825] hover:bg-[#F7F3EC] dark:hover:bg-[#282421] transition cursor-pointer"
+                title="Día anterior"
+              >
+                <ChevronLeft className="w-4 h-4 text-stone-600 dark:text-stone-300" />
+              </button>
+              <button
+                onClick={handleToday}
+                className="px-2.5 py-1.5 rounded-xl border border-[#E8E2D8] dark:border-[#2D2825] text-xs font-semibold hover:bg-[#F7F3EC] dark:hover:bg-[#282421] transition cursor-pointer"
+              >
+                Hoy
+              </button>
+              <button
+                onClick={handleNextDay}
+                className="p-1.5 rounded-xl border border-[#E8E2D8] dark:border-[#2D2825] hover:bg-[#F7F3EC] dark:hover:bg-[#282421] transition cursor-pointer"
+                title="Día siguiente"
+              >
+                <ChevronRight className="w-4 h-4 text-stone-600 dark:text-stone-300" />
+              </button>
+
+              <input
+                type="date"
+                value={selectedDateStr}
+                onChange={(e) => {
+                  if (e.target.value) {
+                    const [y, m, d] = e.target.value.split('-').map(Number);
+                    setSelectedDate(new Date(y, m - 1, d, 12, 0, 0));
+                  }
+                }}
+                className="text-xs bg-[#FAF7F2] dark:bg-[#282421] border border-[#E8E2D8] dark:border-[#352F2B] rounded-lg px-2 py-1 text-stone-700 dark:text-stone-200 cursor-pointer font-medium"
+              />
+
+              <div className="text-xs sm:text-sm font-semibold text-stone-800 dark:text-stone-100 hidden lg:block ml-1">
+                {selectedDate.toLocaleDateString('es-AR', {
+                  weekday: 'short',
+                  day: 'numeric',
+                  month: 'short',
+                  year: 'numeric',
+                })}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Filter by Professional */}
@@ -330,6 +400,25 @@ export const CalendarPage: React.FC = () => {
           </select>
         </div>
       </div>
+
+      {/* Banner de turnos en otras fechas */}
+      {otherDateAppointments.length > 0 && viewMode === 'day' && (
+        <div className="p-3.5 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900 rounded-2xl text-xs text-amber-900 dark:text-amber-200 flex flex-col sm:flex-row sm:items-center justify-between gap-2 shadow-2xs">
+          <div className="flex items-center gap-2">
+            <span className="w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse shrink-0" />
+            <span>
+              Hay <strong>{otherDateAppointments.length} {otherDateAppointments.length === 1 ? 'turno agendado' : 'turnos agendados'}</strong> para otras fechas en esta sucursal.
+            </span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setViewMode('list')}
+            className="text-xs font-bold text-[#5E836F] dark:text-[#8CB5A0] underline hover:opacity-80 cursor-pointer self-start sm:self-auto"
+          >
+            Ver todos los turnos →
+          </button>
+        </div>
+      )}
 
       {/* Main Agenda View: Columns by Professional */}
       {viewMode === 'day' ? (

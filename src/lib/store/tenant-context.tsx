@@ -473,6 +473,53 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     currentUserId,
   ]);
 
+  // Sincronización en tiempo real entre pestañas y ventanas
+  useEffect(() => {
+    let channel: BroadcastChannel | null = null;
+    if (typeof window !== 'undefined' && 'BroadcastChannel' in window) {
+      try {
+        channel = new BroadcastChannel('turnopro_sync_channel');
+        channel.onmessage = (event) => {
+          if (event.data?.type === 'SYNC_DATA') {
+            const savedAppts = localStorage.getItem('tp_appointments');
+            if (savedAppts) {
+              try { setAppointments(JSON.parse(savedAppts)); } catch {}
+            }
+            const savedCusts = localStorage.getItem('tp_customers');
+            if (savedCusts) {
+              try { setCustomers(JSON.parse(savedCusts)); } catch {}
+            }
+          }
+        };
+      } catch {}
+    }
+
+    const handleStorage = (e: StorageEvent) => {
+      if (e.key === 'tp_appointments' && e.newValue) {
+        try { setAppointments(JSON.parse(e.newValue)); } catch {}
+      }
+      if (e.key === 'tp_customers' && e.newValue) {
+        try { setCustomers(JSON.parse(e.newValue)); } catch {}
+      }
+    };
+
+    window.addEventListener('storage', handleStorage);
+    return () => {
+      window.removeEventListener('storage', handleStorage);
+      channel?.close();
+    };
+  }, []);
+
+  const notifySync = () => {
+    if (typeof window !== 'undefined' && 'BroadcastChannel' in window) {
+      try {
+        const bc = new BroadcastChannel('turnopro_sync_channel');
+        bc.postMessage({ type: 'SYNC_DATA' });
+        bc.close();
+      } catch {}
+    }
+  };
+
   const currentUser = profiles.find((p) => p.id === currentUserId) || null;
 
   // Organizations accessible by the currently logged-in user
@@ -588,11 +635,12 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     }
 
     // Upsert Customer
-    let customer = customers.find((c) => c.organization_id === currentOrg.id && c.phone === params.customerPhone);
+    const targetOrgId = service.organization_id || currentOrg.id;
+    let customer = customers.find((c) => c.organization_id === targetOrgId && c.phone === params.customerPhone);
     if (!customer) {
       customer = {
         id: `cust-${Date.now()}`,
-        organization_id: currentOrg.id,
+        organization_id: targetOrgId,
         full_name: params.customerName,
         phone: params.customerPhone,
         email: params.customerEmail,
@@ -619,7 +667,7 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
     const newAppointment: Appointment = {
       id: `appt-${Date.now()}`,
-      organization_id: currentOrg.id,
+      organization_id: targetOrgId,
       branch_id: params.branchId,
       professional_id: params.professionalId,
       customer_id: customer.id,
@@ -639,6 +687,7 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     };
 
     setAppointments((prev) => [...prev, newAppointment]);
+    notifySync();
     addAudit('appointment.created', 'appointments', newAppointment.id, {
       customer_name: params.customerName,
       professional_id: params.professionalId,
