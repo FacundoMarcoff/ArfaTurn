@@ -2,16 +2,11 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   ArrowRight,
-  Shield,
   Lock,
   User,
-  CheckCircle2,
-  HelpCircle,
   Eye,
   EyeOff,
-  Crown,
   LogOut,
-  Scissors,
 } from 'lucide-react';
 import { useTenant } from '../../lib/store/tenant-context';
 import { Profile } from '../../types/database.types';
@@ -33,7 +28,6 @@ export const LoginPage: React.FC = () => {
   const [rememberThisDevice, setRememberThisDevice] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [showCredentialsHelper, setShowCredentialsHelper] = useState(true);
 
   // Ejecución directa de inicio de sesión
   const handlePerformLogin = (userToLogin: Profile, passToCheck?: string) => {
@@ -84,16 +78,6 @@ export const LoginPage: React.FC = () => {
     }
 
     handlePerformLogin(user, password);
-  };
-
-  // Botones de acceso rápido
-  const handleQuickAccess = (userRole: 'admin' | 'peluqueria') => {
-    const target = profiles.find((p) =>
-      userRole === 'admin' ? p.username === 'admin' || p.is_superadmin : p.username === 'peluqueria'
-    );
-    if (target) {
-      handlePerformLogin(target, target.password);
-    }
   };
 
   return (
@@ -165,69 +149,6 @@ export const LoginPage: React.FC = () => {
           </div>
         )}
 
-        {/* Tarjetas de Acceso Rápido en 1 Clic (Solo las 2 Cuentas) */}
-        <div className="grid sm:grid-cols-2 gap-3.5">
-          {/* 1. Acceso Cuenta Admin */}
-          <div
-            onClick={() => handleQuickAccess('admin')}
-            className="p-4 rounded-3xl border-2 border-[#5E836F]/40 bg-gradient-to-br from-emerald-50/80 via-white to-amber-50/50 dark:from-[#1D2B22] dark:via-[#201D1B] dark:to-[#24211D] hover:border-[#5E836F] transition cursor-pointer shadow-xs flex flex-col justify-between space-y-3 group"
-          >
-            <div className="flex items-center justify-between">
-              <div className="w-10 h-10 rounded-2xl bg-[#5E836F] text-amber-200 flex items-center justify-center font-bold text-lg shadow-2xs">
-                <Crown className="w-5 h-5" />
-              </div>
-              <span className="text-[10px] font-extrabold uppercase bg-amber-400 text-stone-950 px-2 py-0.5 rounded-full">
-                Super Admin
-              </span>
-            </div>
-            <div>
-              <h3 className="font-bold text-sm text-stone-900 dark:text-white group-hover:text-[#5E836F] transition">
-                Cuenta Admin (Nosotros)
-              </h3>
-              <p className="text-[11px] text-stone-500 dark:text-stone-400 mt-0.5">
-                Usuario: <code className="font-bold">admin</code> · Clave: <code className="font-bold">admin123</code>
-              </p>
-              <p className="text-[10px] text-stone-400 mt-1">
-                Administrar cuentas, contraseñas y suscripciones vitalicias.
-              </p>
-            </div>
-            <div className="flex items-center justify-end text-xs font-bold text-[#5E836F] group-hover:translate-x-1 transition pt-1 border-t border-[#E8E2D8] dark:border-[#352F2B]">
-              <span>Ingresar como Admin</span>
-              <ArrowRight className="w-3.5 h-3.5 ml-1" />
-            </div>
-          </div>
-
-          {/* 2. Acceso Cuenta Negocio (Peluquería) */}
-          <div
-            onClick={() => handleQuickAccess('peluqueria')}
-            className="p-4 rounded-3xl border-2 border-stone-200 dark:border-[#352F2B] bg-white dark:bg-[#201D1B] hover:border-[#5E836F] transition cursor-pointer shadow-xs flex flex-col justify-between space-y-3 group"
-          >
-            <div className="flex items-center justify-between">
-              <div className="w-10 h-10 rounded-2xl bg-[#FAF7F2] dark:bg-[#282422] text-[#5E836F] flex items-center justify-center font-bold text-lg shadow-2xs border border-[#E8E2D8] dark:border-[#352F2B]">
-                <Scissors className="w-5 h-5" />
-              </div>
-              <span className="text-[10px] font-bold uppercase bg-[#EBF2EE] text-[#3B6652] px-2 py-0.5 rounded-full">
-                Negocio
-              </span>
-            </div>
-            <div>
-              <h3 className="font-bold text-sm text-stone-900 dark:text-white group-hover:text-[#5E836F] transition">
-                Peluquería & Barbería Estilo
-              </h3>
-              <p className="text-[11px] text-stone-500 dark:text-stone-400 mt-0.5">
-                Usuario: <code className="font-bold">peluqueria</code> · Clave: <code className="font-bold">password123</code>
-              </p>
-              <p className="text-[10px] text-stone-400 mt-1">
-                Ver agenda de turnos, clientes, servicios y caja.
-              </p>
-            </div>
-            <div className="flex items-center justify-end text-xs font-bold text-[#5E836F] group-hover:translate-x-1 transition pt-1 border-t border-[#E8E2D8] dark:border-[#352F2B]">
-              <span>Ingresar al Negocio</span>
-              <ArrowRight className="w-3.5 h-3.5 ml-1" />
-            </div>
-          </div>
-        </div>
-
         {/* Formulario Tradicional de Login */}
         <div className="bg-white dark:bg-[#201D1B] rounded-3xl border border-[#E8E2D8] dark:border-[#2D2825] shadow-xs p-6 sm:p-8 space-y-5">
           <div className="text-center space-y-1.5">
@@ -235,10 +156,10 @@ export const LoginPage: React.FC = () => {
               <Lock className="w-5 h-5" />
             </div>
             <h1 className="text-xl font-serif font-black text-stone-900 dark:text-white tracking-tight">
-              Ingreso con Credenciales
+              Ingreso al Sistema
             </h1>
             <p className="text-xs text-stone-500 dark:text-stone-400">
-              Escribí tu usuario y contraseña asignados:
+              Ingresá tu usuario y contraseña para continuar:
             </p>
           </div>
 
@@ -258,7 +179,7 @@ export const LoginPage: React.FC = () => {
                 <input
                   type="text"
                   required
-                  placeholder="admin o peluqueria"
+                  placeholder="Tu nombre de usuario"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                   className="w-full bg-[#FAF7F2] dark:bg-[#1A1817] border border-[#E4DDD2] dark:border-[#352F2B] rounded-xl pl-9 pr-3 py-2.5 text-stone-900 dark:text-white focus:outline-[#5E836F] font-mono"
