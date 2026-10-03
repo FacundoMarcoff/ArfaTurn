@@ -1,0 +1,6 @@
+{
+  "name": "TurnoPro - SaaS Multi-Tenant de Turnos, Clientes y Ventas",
+  "description": "Plataforma SaaS multi-tenant profesional para gestión de turnos, agenda interactiva, CRM de clientes, inventario y caja para comercios y profesionales.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
