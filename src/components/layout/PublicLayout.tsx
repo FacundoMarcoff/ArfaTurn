@@ -1,7 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { ShieldCheck, Store } from 'lucide-react';
-import { PWAInstallButton } from '../pwa/PWAInstallButton';
 import { OfflineIndicator } from '../pwa/OfflineIndicator';
 
 interface PublicLayoutProps {
@@ -38,7 +37,6 @@ export const PublicLayout: React.FC<PublicLayoutProps> = ({
           </div>
 
           <div className="flex items-center gap-3">
-            <PWAInstallButton />
             <Link
               to="/admin/calendar"
               className="text-xs text-stone-600 hover:text-stone-900 px-3 py-1.5 rounded-xl border border-[#E0D8CC] hover:bg-[#F2ECE4] transition font-medium"

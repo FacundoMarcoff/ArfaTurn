@@ -17,7 +17,6 @@ import {
 } from 'lucide-react';
 import { useTenant } from '../../lib/store/tenant-context';
 import { getIndustryInfo } from '../../lib/constants/industries';
-import { PWAInstallButton } from '../pwa/PWAInstallButton';
 import { OfflineIndicator } from '../pwa/OfflineIndicator';
 
 export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -122,8 +121,6 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
 
           {/* Right Header items */}
           <div className="flex items-center gap-3">
-            <PWAInstallButton />
-
             {/* User display */}
             <div className="flex items-center gap-2.5 p-1 pl-2.5 rounded-xl bg-[#FAF7F2] dark:bg-[#262220] border border-[#E4DDD2] dark:border-[#352F2B] text-xs">
               <div className="w-7 h-7 rounded-lg bg-[#5E836F] text-white flex items-center justify-center font-bold text-xs shrink-0 shadow-2xs">

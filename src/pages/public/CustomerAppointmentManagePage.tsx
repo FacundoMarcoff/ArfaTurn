@@ -12,6 +12,7 @@ import {
 import { useTenant } from '../../lib/store/tenant-context';
 import { PublicLayout } from '../../components/layout/PublicLayout';
 import { generateICS } from '../../lib/availability/engine';
+import { AddToCalendarButtons } from '../../components/calendar/AddToCalendarButtons';
 
 export const CustomerAppointmentManagePage: React.FC = () => {
   const { token } = useParams<{ token: string }>();
@@ -193,13 +194,21 @@ export const CustomerAppointmentManagePage: React.FC = () => {
 
         {/* Actions */}
         <div className="space-y-3">
-          <button
-            onClick={handleDownloadICS}
-            className="w-full py-3 rounded-xl bg-[#6B8F7D] hover:bg-[#587969] text-white font-semibold text-sm transition flex items-center justify-center gap-2 shadow-xs cursor-pointer"
-          >
-            <Download className="w-4 h-4" />
-            <span>Descargar archivo de Calendario (.ics)</span>
-          </button>
+          <div className="bg-[#FAF7F2] p-4 rounded-2xl border border-[#E8E2D8] space-y-2">
+            <span className="text-xs font-semibold text-stone-700 block">
+              Guardar en tu calendario personal:
+            </span>
+            <AddToCalendarButtons
+              event={{
+                title: `Turno en ${org?.name || 'Comercio'}`,
+                description: `Turno con ${professional?.display_name || 'Profesional'}. Lugar: ${branch?.name || ''}, ${branch?.address || ''}`,
+                location: `${branch?.name || ''}, ${branch?.address || ''}`,
+                startsAt: appointment.starts_at,
+                endsAt: appointment.ends_at,
+              }}
+              filenamePrefix={`turno-${org?.name || 'reserva'}`}
+            />
+          </div>
 
           {canCancel ? (
             <button

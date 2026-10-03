@@ -11,13 +11,19 @@ import {
   ArrowLeft,
   MapPin,
   CreditCard,
-  Download,
   CalendarCheck,
+  Mail,
+  Search,
+  XCircle,
+  AlertTriangle,
+  ExternalLink,
+  X,
 } from 'lucide-react';
 import { useTenant } from '../../lib/store/tenant-context';
 import { PublicLayout } from '../../components/layout/PublicLayout';
-import { computeAvailableSlots, generateICS, TimeSlot } from '../../lib/availability/engine';
-import { Service, Professional, Branch } from '../../types/database.types';
+import { computeAvailableSlots, TimeSlot } from '../../lib/availability/engine';
+import { Service, Professional, Branch, Appointment } from '../../types/database.types';
+import { AddToCalendarButtons } from '../../components/calendar/AddToCalendarButtons';
 
 export const PublicBookingPage: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -28,7 +34,9 @@ export const PublicBookingPage: React.FC = () => {
     professionals,
     workingHours,
     appointments,
+    customers,
     createAppointment,
+    cancelAppointment,
   } = useTenant();
 
   // Find organization by slug
@@ -66,6 +74,72 @@ export const PublicBookingPage: React.FC = () => {
   } | null>(null);
 
   const [bookingError, setBookingError] = useState<string | null>(null);
+
+  // View mode: 'booking' vs 'my-appointments'
+  const [viewMode, setViewMode] = useState<'booking' | 'my-appointments'>('booking');
+  const [searchEmail, setSearchEmail] = useState('');
+  const [hasSearched, setHasSearched] = useState(false);
+  const [cancellingApptId, setCancellingApptId] = useState<string | null>(null);
+  const [cancelFeedback, setCancelFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+
+  // Client appointments queried by email
+  const clientAppointments = useMemo(() => {
+    if (!searchEmail.trim()) return [];
+    const cleanEmail = searchEmail.trim().toLowerCase();
+
+    const matchingCustIds = new Set(
+      customers
+        .filter((c) => c.email && c.email.trim().toLowerCase() === cleanEmail)
+        .map((c) => c.id)
+    );
+
+    return appointments
+      .filter((a) => {
+        if (a.organization_id !== org.id) return false;
+        if (matchingCustIds.has(a.customer_id)) return true;
+        const apptCustomer = customers.find((c) => c.id === a.customer_id);
+        if (apptCustomer?.email && apptCustomer.email.trim().toLowerCase() === cleanEmail) return true;
+        if (a.customer?.email && a.customer.email.trim().toLowerCase() === cleanEmail) return true;
+        return false;
+      })
+      .sort((a, b) => new Date(b.starts_at).getTime() - new Date(a.starts_at).getTime());
+  }, [appointments, customers, org.id, searchEmail]);
+
+  const handleClientCancel = (appointmentId: string) => {
+    const res = cancelAppointment(appointmentId, 'Cancelado por el cliente desde el turnero web');
+    if (res.success) {
+      setCancelFeedback({
+        type: 'success',
+        message: 'Tu turno fue cancelado con éxito.',
+      });
+      setCancellingApptId(null);
+    } else {
+      setCancelFeedback({
+        type: 'error',
+        message: res.message || 'No se pudo cancelar el turno.',
+      });
+    }
+  };
+
+  const getApptDetails = (appt: Appointment) => {
+    const s = appt.service || services.find((srv) => srv.id === (appt as any).service_id || srv.price === appt.total_amount);
+    const p = professionals.find((prof) => prof.id === appt.professional_id);
+    const b = branches.find((br) => br.id === appt.branch_id);
+    const c = customers.find((cust) => cust.id === appt.customer_id);
+    const start = new Date(appt.starts_at);
+    const end = new Date(appt.ends_at);
+
+    return {
+      serviceName: s?.name || (appt.customer_notes?.slice(0, 30) ? `Servicio: ${appt.customer_notes.slice(0, 30)}` : 'Servicio Reservado'),
+      profName: p?.display_name || 'Profesional Asignado',
+      branchName: b?.name || org.name,
+      branchAddress: b?.address || '',
+      customerName: c?.full_name || '',
+      start,
+      end,
+      totalAmount: appt.total_amount,
+    };
+  };
 
   // Derived objects
   const selectedBranch = orgBranches.find((b) => b.id === selectedBranchId) || orgBranches[0];
@@ -129,31 +203,353 @@ export const PublicBookingPage: React.FC = () => {
     }
   };
 
-  // Download ICS event
-  const handleDownloadICS = () => {
-    if (!bookingResult || !selectedService || !selectedBranch) return;
-    const icsContent = generateICS({
-      title: `${selectedService.name} · ${org.name}`,
-      description: `Turno confirmado en ${selectedBranch.name}. Profesional: ${selectedSlot?.professionalName || 'Asignado'}. Notas: ${customerNotes}`,
-      location: `${selectedBranch.name}, ${selectedBranch.address || ''}`,
-      startsAt: bookingResult.startsAt,
-      endsAt: bookingResult.endsAt,
-    });
-
-    const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.setAttribute('download', `turno-${selectedService.name.toLowerCase().replace(/\s+/g, '-')}.ics`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  };
-
   return (
     <PublicLayout orgName={org.name} industry={org.industry} logoUrl={org.logo_url}>
-      {/* Step Indicator */}
-      {step < 7 && (
+      {/* Top Switcher: Agendar Turno vs Mis Turnos */}
+      <div className="flex items-center justify-center p-1 bg-[#F2ECE4] rounded-2xl max-w-xs sm:max-w-sm mx-auto mb-8 shadow-2xs border border-[#E8E2D8]">
+        <button
+          type="button"
+          onClick={() => {
+            setViewMode('booking');
+            setCancelFeedback(null);
+          }}
+          className={`flex-1 py-2 px-3 rounded-xl text-xs font-bold transition cursor-pointer flex items-center justify-center gap-2 ${
+            viewMode === 'booking'
+              ? 'bg-white text-stone-900 shadow-xs'
+              : 'text-stone-500 hover:text-stone-900'
+          }`}
+        >
+          <CalendarIcon className="w-3.5 h-3.5" />
+          <span>Agendar Turno</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            setViewMode('my-appointments');
+            setCancelFeedback(null);
+          }}
+          className={`flex-1 py-2 px-3 rounded-xl text-xs font-bold transition cursor-pointer flex items-center justify-center gap-2 ${
+            viewMode === 'my-appointments'
+              ? 'bg-white text-[#5E836F] shadow-xs'
+              : 'text-stone-500 hover:text-stone-900'
+          }`}
+        >
+          <CalendarCheck className="w-3.5 h-3.5" />
+          <span>Mis Turnos</span>
+        </button>
+      </div>
+
+      {viewMode === 'my-appointments' ? (
+        <div className="max-w-2xl mx-auto space-y-6">
+          {/* Card de Búsqueda por Email */}
+          <div className="bg-white rounded-3xl border border-[#E8E2D8] p-6 sm:p-7 shadow-xs space-y-4">
+            <div className="space-y-1">
+              <h2 className="text-xl font-bold text-stone-900 tracking-tight flex items-center gap-2">
+                <CalendarCheck className="w-5 h-5 text-[#5E836F]" />
+                <span>Mis Turnos en {org.name}</span>
+              </h2>
+              <p className="text-xs text-stone-500 leading-relaxed">
+                Ingresá el correo electrónico con el que agendaste para ver tus turnos pendientes, guardarlos en tu calendario o cancelarlos si lo necesitás.
+              </p>
+            </div>
+
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                if (searchEmail.trim()) {
+                  setHasSearched(true);
+                  setCancellingApptId(null);
+                }
+              }}
+              className="flex flex-col sm:flex-row gap-2.5 pt-1"
+            >
+              <div className="relative flex-1">
+                <Mail className="w-4 h-4 text-stone-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                <input
+                  type="email"
+                  required
+                  placeholder="ej: tuemail@gmail.com"
+                  value={searchEmail}
+                  onChange={(e) => {
+                    setSearchEmail(e.target.value);
+                    setHasSearched(false);
+                    setCancelFeedback(null);
+                  }}
+                  className="w-full bg-[#FAF7F2] border border-[#E4DDD2] rounded-xl pl-10 pr-3 py-2.5 text-xs text-stone-900 focus:outline-[#5E836F]"
+                />
+              </div>
+              <button
+                type="submit"
+                className="px-5 py-2.5 rounded-xl bg-[#5E836F] hover:bg-[#4E705D] text-white font-semibold text-xs transition shadow-xs flex items-center justify-center gap-2 cursor-pointer shrink-0"
+              >
+                <Search className="w-3.5 h-3.5" />
+                <span>Consultar Turnos</span>
+              </button>
+            </form>
+          </div>
+
+          {/* Feedback de Cancelación */}
+          {cancelFeedback && (
+            <div
+              className={`p-4 rounded-2xl text-xs flex items-center justify-between gap-2 border ${
+                cancelFeedback.type === 'success'
+                  ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
+                  : 'bg-red-50 border-red-200 text-red-800'
+              }`}
+            >
+              <div className="flex items-center gap-2">
+                {cancelFeedback.type === 'success' ? (
+                  <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-600" />
+                ) : (
+                  <AlertCircle className="w-4 h-4 shrink-0 text-red-600" />
+                )}
+                <span>{cancelFeedback.message}</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setCancelFeedback(null)}
+                className="text-stone-400 hover:text-stone-600 cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          )}
+
+          {/* Resultados de Búsqueda */}
+          {hasSearched && (
+            <>
+              {clientAppointments.length === 0 ? (
+                <div className="bg-white rounded-3xl border border-[#E8E2D8] p-8 text-center space-y-4 shadow-xs">
+                  <div className="w-12 h-12 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center mx-auto border border-amber-200">
+                    <AlertTriangle className="w-6 h-6" />
+                  </div>
+                  <div className="space-y-1">
+                    <h3 className="font-bold text-sm text-stone-900">
+                      No encontramos turnos registrados
+                    </h3>
+                    <p className="text-xs text-stone-500 max-w-md mx-auto">
+                      No hay ningún turno asociado a <strong className="text-stone-700">{searchEmail}</strong> en {org.name}. Verificá que el email esté escrito exactamente como cuando agendaste.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setViewMode('booking');
+                      setStep(1);
+                    }}
+                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#5E836F] hover:bg-[#4E705D] text-white text-xs font-semibold transition shadow-xs cursor-pointer"
+                  >
+                    <span>Agendar un Turno Ahora</span>
+                    <ChevronRight className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              ) : (
+                <div className="space-y-6">
+                  {/* Turnos Próximos / Pendientes */}
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between px-1">
+                      <h3 className="text-xs font-bold text-stone-800 uppercase tracking-wider flex items-center gap-2">
+                        <span>Turnos Próximos</span>
+                        <span className="px-2 py-0.5 rounded-full bg-[#EBF2EE] text-[#3B6652] text-[10px] font-black">
+                          {clientAppointments.filter((a) => a.status === 'confirmed' || a.status === 'in_progress').length}
+                        </span>
+                      </h3>
+                    </div>
+
+                    {clientAppointments.filter((a) => a.status === 'confirmed' || a.status === 'in_progress').length === 0 ? (
+                      <div className="p-5 rounded-2xl bg-white border border-[#E8E2D8] text-center text-xs text-stone-500">
+                        No tenés turnos activos o pendientes en este momento.
+                      </div>
+                    ) : (
+                      clientAppointments
+                        .filter((a) => a.status === 'confirmed' || a.status === 'in_progress')
+                        .map((appt) => {
+                          const details = getApptDetails(appt);
+                          const isCancelling = cancellingApptId === appt.id;
+
+                          return (
+                            <div
+                              key={appt.id}
+                              className="bg-white rounded-3xl border border-[#E8E2D8] p-5 sm:p-6 shadow-xs space-y-4 hover:border-stone-300 transition"
+                            >
+                              {/* Header Card */}
+                              <div className="flex items-start justify-between gap-3">
+                                <div>
+                                  <div className="flex items-center gap-2">
+                                    <h4 className="font-bold text-base text-stone-900">
+                                      {details.serviceName}
+                                    </h4>
+                                    <span
+                                      className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase ${
+                                        appt.status === 'confirmed'
+                                          ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                          : 'bg-purple-50 text-purple-700 border border-purple-200'
+                                      }`}
+                                    >
+                                      {appt.status === 'confirmed' ? 'Confirmado' : 'En Atención'}
+                                    </span>
+                                  </div>
+                                  <p className="text-xs text-stone-500 mt-0.5">
+                                    Con: <span className="font-medium text-stone-800">{details.profName}</span>
+                                  </p>
+                                </div>
+
+                                <div className="text-right">
+                                  <span className="text-sm font-bold text-stone-900 tabular-nums">
+                                    ${details.totalAmount.toLocaleString()}
+                                  </span>
+                                </div>
+                              </div>
+
+                              {/* Horario y Lugar */}
+                              <div className="grid sm:grid-cols-2 gap-2 text-xs bg-[#FAF7F2] p-3.5 rounded-2xl border border-[#EFE9DF]">
+                                <div className="flex items-center gap-2 text-stone-700">
+                                  <CalendarIcon className="w-4 h-4 text-[#5E836F] shrink-0" />
+                                  <span className="capitalize font-medium">
+                                    {details.start.toLocaleDateString('es-AR', {
+                                      weekday: 'long',
+                                      day: 'numeric',
+                                      month: 'short',
+                                    })}
+                                    {' '}·{' '}
+                                    {details.start.toLocaleTimeString('es-AR', {
+                                      hour: '2-digit',
+                                      minute: '2-digit',
+                                    })} hs
+                                  </span>
+                                </div>
+
+                                <div className="flex items-center gap-2 text-stone-700">
+                                  <MapPin className="w-4 h-4 text-stone-400 shrink-0" />
+                                  <span className="truncate">
+                                    {details.branchName}
+                                    {details.branchAddress && ` (${details.branchAddress})`}
+                                  </span>
+                                </div>
+                              </div>
+
+                              {/* Calendario 1-clic */}
+                              <div className="pt-1">
+                                <span className="text-[11px] font-semibold text-stone-500 block mb-2">
+                                  Guardar en tu calendario:
+                                </span>
+                                <AddToCalendarButtons
+                                  buttonSize="sm"
+                                  event={{
+                                    title: `${details.serviceName} · ${org.name}`,
+                                    description: `Turno con ${details.profName} en ${details.branchName}. ${details.branchAddress}`,
+                                    location: `${details.branchName}, ${details.branchAddress}`,
+                                    startsAt: appt.starts_at,
+                                    endsAt: appt.ends_at,
+                                  }}
+                                  filenamePrefix={`turno-${details.serviceName}`}
+                                />
+                              </div>
+
+                              {/* Acciones del Turno / Cancelación */}
+                              <div className="pt-3 border-t border-[#EFE9DF] flex flex-wrap items-center justify-between gap-2.5">
+                                <Link
+                                  to={`/mi-turno/${appt.management_token}`}
+                                  className="text-xs text-stone-600 hover:text-stone-900 inline-flex items-center gap-1 font-medium underline"
+                                >
+                                  <span>Enlace privado de gestión</span>
+                                  <ExternalLink className="w-3 h-3" />
+                                </Link>
+
+                                {!isCancelling ? (
+                                  <button
+                                    type="button"
+                                    onClick={() => setCancellingApptId(appt.id)}
+                                    className="px-3.5 py-1.5 rounded-xl border border-red-200 text-red-700 hover:bg-red-50 text-xs font-semibold transition cursor-pointer flex items-center gap-1.5"
+                                  >
+                                    <XCircle className="w-3.5 h-3.5" />
+                                    <span>Cancelar Turno</span>
+                                  </button>
+                                ) : (
+                                  <div className="w-full bg-red-50 border border-red-200 rounded-2xl p-3.5 space-y-2.5 animate-in fade-in">
+                                    <div className="flex items-center gap-2 text-xs font-bold text-red-900">
+                                      <AlertTriangle className="w-4 h-4 text-red-600 shrink-0" />
+                                      <span>¿Confirmás que querés cancelar este turno?</span>
+                                    </div>
+                                    <p className="text-[11px] text-red-700">
+                                      El horario quedará liberado para que otro cliente pueda reservarlo.
+                                    </p>
+                                    <div className="flex items-center gap-2 pt-1">
+                                      <button
+                                        type="button"
+                                        onClick={() => handleClientCancel(appt.id)}
+                                        className="px-3 py-1.5 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs transition cursor-pointer shadow-2xs"
+                                      >
+                                        Sí, Cancelar Turno
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() => setCancellingApptId(null)}
+                                        className="px-3 py-1.5 rounded-xl bg-white border border-stone-200 text-stone-700 font-semibold text-xs hover:bg-stone-50 transition cursor-pointer"
+                                      >
+                                        Volver
+                                      </button>
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })
+                    )}
+                  </div>
+
+                  {/* Historial de Turnos Cancelados o Pasados */}
+                  {clientAppointments.some((a) => a.status === 'cancelled' || a.status === 'completed') && (
+                    <div className="space-y-3 pt-4 border-t border-[#E8E2D8]">
+                      <h3 className="text-xs font-bold text-stone-500 uppercase tracking-wider px-1">
+                        Turnos Anteriores o Cancelados
+                      </h3>
+                      {clientAppointments
+                        .filter((a) => a.status === 'cancelled' || a.status === 'completed')
+                        .map((appt) => {
+                          const details = getApptDetails(appt);
+                          return (
+                            <div
+                              key={appt.id}
+                              className="bg-white/60 rounded-2xl border border-stone-200 p-4 flex items-center justify-between gap-3 text-xs opacity-75"
+                            >
+                              <div>
+                                <span className="font-bold text-stone-800">
+                                  {details.serviceName}
+                                </span>
+                                <div className="text-[11px] text-stone-500 capitalize">
+                                  {details.start.toLocaleDateString('es-AR', {
+                                    day: 'numeric',
+                                    month: 'short',
+                                    year: 'numeric',
+                                  })}{' '}
+                                  · {details.profName}
+                                </div>
+                              </div>
+                              <span
+                                className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                                  appt.status === 'cancelled'
+                                    ? 'bg-stone-100 text-stone-600'
+                                    : 'bg-stone-100 text-stone-700'
+                                }`}
+                              >
+                                {appt.status === 'cancelled' ? 'Cancelado' : 'Completado'}
+                              </span>
+                            </div>
+                          );
+                        })}
+                    </div>
+                  )}
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      ) : (
+        <>
+          {/* Step Indicator */}
+          {step < 7 && (
         <div className="mb-8">
           <div className="flex items-center justify-between text-xs text-stone-500 font-medium mb-2.5">
             <span>Paso {step} de 6</span>
@@ -754,28 +1150,53 @@ export const PublicBookingPage: React.FC = () => {
           </div>
 
           {/* Action buttons */}
-          <div className="flex flex-col sm:flex-row gap-3 justify-center">
-            <button
-              onClick={handleDownloadICS}
-              className="flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-[#6B8F7D] hover:bg-[#587969] text-white font-semibold text-sm shadow-xs transition cursor-pointer"
-            >
-              <Download className="w-4 h-4" />
-              <span>Guardar en Calendario (.ics)</span>
-            </button>
+          <div className="space-y-4">
+            <div className="bg-[#FAF7F2] p-5 rounded-2xl border border-[#E8E2D8] text-center space-y-3">
+              <span className="text-xs font-bold text-stone-800 block">
+                Agendá este turno a tu calendario con 1 solo toque:
+              </span>
+              <AddToCalendarButtons
+                className="justify-center"
+                event={{
+                  title: `${selectedService?.name || 'Turno'} · ${org.name}`,
+                  description: `Turno confirmado en ${selectedBranch?.name || ''}. Profesional: ${selectedSlot?.professionalName || 'Asignado'}. Notas: ${customerNotes}`,
+                  location: `${selectedBranch?.name || ''}, ${selectedBranch?.address || ''}`,
+                  startsAt: bookingResult.startsAt,
+                  endsAt: bookingResult.endsAt,
+                }}
+                filenamePrefix={`turno-${selectedService?.name || 'reserva'}`}
+              />
+            </div>
 
-            <Link
-              to={`/reservar/${org.slug}`}
-              onClick={() => {
-                setStep(1);
-                setSelectedSlot(null);
-                setBookingResult(null);
-              }}
-              className="flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-[#F2ECE4] hover:bg-[#EAE2D8] text-stone-700 font-semibold text-sm transition"
-            >
-              <span>Hacer otra reserva</span>
-            </Link>
+            <div className="flex flex-col sm:flex-row gap-3 justify-center">
+              <button
+                type="button"
+                onClick={() => {
+                  setStep(1);
+                  setSelectedSlot(null);
+                  setBookingResult(null);
+                  setViewMode('booking');
+                }}
+                className="px-5 py-3 rounded-xl bg-[#F2ECE4] hover:bg-[#EAE2D8] text-stone-700 font-semibold text-xs transition cursor-pointer"
+              >
+                Hacer otra reserva
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setSearchEmail(customerEmail);
+                  setHasSearched(true);
+                  setViewMode('my-appointments');
+                }}
+                className="px-5 py-3 rounded-xl bg-white hover:bg-stone-50 border border-stone-200 text-stone-800 font-semibold text-xs transition cursor-pointer"
+              >
+                Ver todos mis turnos
+              </button>
+            </div>
           </div>
         </div>
+      )}
+        </>
       )}
     </PublicLayout>
   );

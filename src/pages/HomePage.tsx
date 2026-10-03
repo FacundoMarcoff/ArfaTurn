@@ -5,7 +5,7 @@ import {
   Users,
   Package,
   ReceiptText,
-  Smartphone,
+  Globe,
   ExternalLink,
   ArrowRight,
   ShieldCheck,
@@ -15,7 +15,6 @@ import {
   Store,
 } from 'lucide-react';
 import { useTenant } from '../lib/store/tenant-context';
-import { PWAInstallButton } from '../components/pwa/PWAInstallButton';
 
 export const HomePage: React.FC = () => {
   const { organizations, switchOrganization } = useTenant();
@@ -38,7 +37,6 @@ export const HomePage: React.FC = () => {
           </div>
 
           <div className="flex items-center gap-3">
-            <PWAInstallButton />
             <Link
               to="/admin/accounts"
               className="text-xs font-semibold text-stone-600 dark:text-stone-300 hover:text-stone-900 dark:hover:text-white px-3 py-1.5 rounded-xl border border-[#E0D8CC] dark:border-[#352F2B] hover:bg-[#F2ECE4] dark:hover:bg-[#282421] transition hidden sm:inline-flex items-center gap-1.5"
@@ -256,10 +254,10 @@ export const HomePage: React.FC = () => {
           </div>
 
           <div className="p-5 bg-white dark:bg-[#201D1B] rounded-2xl border border-[#E8E2D8] dark:border-[#2D2825] space-y-2 shadow-2xs">
-            <Smartphone className="w-5 h-5 text-[#5B8576]" />
-            <h4 className="font-bold text-sm text-stone-900 dark:text-white">Capacitor Android & PWA</h4>
+            <Globe className="w-5 h-5 text-[#5B8576]" />
+            <h4 className="font-bold text-sm text-stone-900 dark:text-white">100% Web & Mobile Responsive</h4>
             <p className="text-xs text-stone-500 leading-relaxed">
-              Soporte para Android Studio, instalación PWA en navegador y funcionamiento adaptativo para celulares y tablets.
+              Accedé desde cualquier dispositivo, celular, tablet o computadora sin necesidad de instalar nada.
             </p>
           </div>
         </div>
@@ -267,7 +265,7 @@ export const HomePage: React.FC = () => {
 
       {/* Footer */}
       <footer className="border-t border-[#E8E2D8] dark:border-[#2D2825] py-8 text-center text-xs text-stone-400">
-        <p>TurnoPro SaaS · Construido con React, TypeScript, Capacitor y Supabase.</p>
+        <p>TurnoPro SaaS · Construido con React, TypeScript y Supabase.</p>
       </footer>
     </div>
   );

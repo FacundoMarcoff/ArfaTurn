@@ -635,6 +635,7 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       management_token: managementToken,
       management_token_expires_at: new Date(Date.now() + 60 * 86400000).toISOString(),
       created_at: new Date().toISOString(),
+      service: service,
     };
 
     setAppointments((prev) => [...prev, newAppointment]);
