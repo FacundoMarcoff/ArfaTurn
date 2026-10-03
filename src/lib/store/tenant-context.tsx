@@ -43,6 +43,7 @@ import {
   INITIAL_MEMBERSHIPS,
 } from './demo-data';
 import { INDUSTRIES_METADATA } from '../constants/industries';
+import { supabase, isSupabaseConfigured } from '../supabase';
 
 interface TenantContextType {
   currentOrg: Organization;
@@ -510,6 +511,91 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     };
   }, []);
 
+  // Carga inicial y suscripción Realtime a Supabase (si está configurado)
+  useEffect(() => {
+    if (!isSupabaseConfigured || !supabase) return;
+
+    async function loadSupabaseData() {
+      try {
+        const { data: dbAppointments, error: apptErr } = await supabase!
+          .from('appointments')
+          .select('*');
+        if (!apptErr && dbAppointments && dbAppointments.length > 0) {
+          setAppointments((prev) => {
+            const map = new Map<string, Appointment>();
+            prev.forEach((a) => map.set(a.id, a));
+            dbAppointments.forEach((a: any) => map.set(a.id, a));
+            return Array.from(map.values());
+          });
+        }
+
+        const { data: dbCustomers, error: custErr } = await supabase!
+          .from('customers')
+          .select('*');
+        if (!custErr && dbCustomers && dbCustomers.length > 0) {
+          setCustomers((prev) => {
+            const map = new Map<string, Customer>();
+            prev.forEach((c) => map.set(c.id, c));
+            dbCustomers.forEach((c: any) => map.set(c.id, c));
+            return Array.from(map.values());
+          });
+        }
+      } catch (e) {
+        console.warn('Error conectando con Supabase:', e);
+      }
+    }
+
+    loadSupabaseData();
+
+    // Suscripción en tiempo real a cambios en la base de datos
+    const dbChannel = supabase
+      .channel('db-realtime-appointments')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'appointments' },
+        (payload) => {
+          if (payload.eventType === 'INSERT') {
+            const incoming = payload.new as Appointment;
+            setAppointments((prev) => {
+              if (prev.some((a) => a.id === incoming.id)) return prev;
+              return [...prev, incoming];
+            });
+          } else if (payload.eventType === 'UPDATE') {
+            const updated = payload.new as Appointment;
+            setAppointments((prev) =>
+              prev.map((a) => (a.id === updated.id ? { ...a, ...updated } : a))
+            );
+          } else if (payload.eventType === 'DELETE') {
+            const deletedId = (payload.old as any)?.id;
+            if (deletedId) {
+              setAppointments((prev) => prev.filter((a) => a.id !== deletedId));
+            }
+          }
+        }
+      )
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'customers' },
+        (payload) => {
+          if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
+            const incoming = payload.new as Customer;
+            setCustomers((prev) => {
+              const exists = prev.some((c) => c.id === incoming.id);
+              if (exists) {
+                return prev.map((c) => (c.id === incoming.id ? incoming : c));
+              }
+              return [...prev, incoming];
+            });
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase?.removeChannel(dbChannel);
+    };
+  }, []);
+
   const notifySync = () => {
     if (typeof window !== 'undefined' && 'BroadcastChannel' in window) {
       try {
@@ -688,6 +774,52 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
     setAppointments((prev) => [...prev, newAppointment]);
     notifySync();
+
+    // Persistir en Supabase
+    if (isSupabaseConfigured && supabase) {
+      supabase
+        .from('customers')
+        .upsert({
+          id: customer.id,
+          organization_id: targetOrgId,
+          full_name: customer.full_name,
+          phone: customer.phone,
+          email: customer.email || null,
+          notes: customer.notes || '',
+          tags: customer.tags || ['Nuevo'],
+          is_blacklisted: false,
+          total_appointments: customer.total_appointments,
+          total_spent: customer.total_spent,
+        })
+        .then(({ error }) => {
+          if (error) console.error('Supabase customer upsert error:', error);
+        });
+
+      supabase
+        .from('appointments')
+        .insert({
+          id: newAppointment.id,
+          organization_id: targetOrgId,
+          branch_id: newAppointment.branch_id,
+          professional_id: newAppointment.professional_id,
+          customer_id: customer.id,
+          status: newAppointment.status,
+          payment_status: newAppointment.payment_status,
+          starts_at: newAppointment.starts_at,
+          ends_at: newAppointment.ends_at,
+          service_duration_minutes: newAppointment.service_duration_minutes,
+          total_amount: newAppointment.total_amount,
+          deposit_amount: newAppointment.deposit_amount,
+          customer_notes: newAppointment.customer_notes || null,
+          booking_channel: newAppointment.booking_channel,
+          management_token: newAppointment.management_token,
+          management_token_expires_at: newAppointment.management_token_expires_at,
+        })
+        .then(({ error }) => {
+          if (error) console.error('Supabase appointment insert error:', error);
+        });
+    }
+
     addAudit('appointment.created', 'appointments', newAppointment.id, {
       customer_name: params.customerName,
       professional_id: params.professionalId,
@@ -702,6 +834,18 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     setAppointments((prev) =>
       prev.map((appt) => (appt.id === appointmentId ? { ...appt, status } : appt))
     );
+    notifySync();
+
+    if (isSupabaseConfigured && supabase) {
+      supabase
+        .from('appointments')
+        .update({ status })
+        .eq('id', appointmentId)
+        .then(({ error }) => {
+          if (error) console.error('Supabase status update error:', error);
+        });
+    }
+
     addAudit('appointment.status_updated', 'appointments', appointmentId, { new_status: status });
   };
 
@@ -744,6 +888,21 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
           : a
       )
     );
+    notifySync();
+
+    if (isSupabaseConfigured && supabase) {
+      supabase
+        .from('appointments')
+        .update({
+          starts_at: startDate.toISOString(),
+          ends_at: endDate.toISOString(),
+          professional_id: targetProfId,
+        })
+        .eq('id', appointmentId)
+        .then(({ error }) => {
+          if (error) console.error('Supabase reschedule error:', error);
+        });
+    }
 
     addAudit('appointment.rescheduled', 'appointments', appointmentId, {
       previous_starts_at: appt.starts_at,
@@ -760,6 +919,20 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     setAppointments((prev) =>
       prev.map((a) => (a.id === appointmentId ? { ...a, status: 'cancelled', internal_notes: reason } : a))
     );
+    notifySync();
+
+    if (isSupabaseConfigured && supabase) {
+      supabase
+        .from('appointments')
+        .update({
+          status: 'cancelled',
+          internal_notes: reason || 'Cancelado',
+        })
+        .eq('id', appointmentId)
+        .then(({ error }) => {
+          if (error) console.error('Supabase cancel error:', error);
+        });
+    }
 
     addAudit('appointment.cancelled', 'appointments', appointmentId, { reason });
     return { success: true };
