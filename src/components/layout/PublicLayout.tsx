@@ -1,5 +1,4 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
 import { ShieldCheck, Store } from 'lucide-react';
 import { OfflineIndicator } from '../pwa/OfflineIndicator';
 
@@ -34,16 +33,6 @@ export const PublicLayout: React.FC<PublicLayoutProps> = ({
                 <span className="text-[#4A725D] font-medium">Reservas Online</span>
               </p>
             </div>
-          </div>
-
-          <div className="flex items-center gap-3">
-            <Link
-              to="/admin/calendar"
-              className="text-xs text-stone-600 hover:text-stone-900 px-3 py-1.5 rounded-xl border border-[#E0D8CC] hover:bg-[#F2ECE4] transition font-medium"
-              title="Acceso para el personal del comercio"
-            >
-              Panel Comercio
-            </Link>
           </div>
         </div>
       </header>
