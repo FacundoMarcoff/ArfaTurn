@@ -524,7 +524,15 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
           setAppointments((prev) => {
             const map = new Map<string, Appointment>();
             prev.forEach((a) => map.set(a.id, a));
-            dbAppointments.forEach((a: any) => map.set(a.id, a));
+            dbAppointments.forEach((a: any) => {
+              const matchedService = services.find(
+                (s) => s.duration_minutes === a.service_duration_minutes || s.price === Number(a.total_amount)
+              );
+              map.set(a.id, {
+                ...a,
+                service: a.service || matchedService,
+              });
+            });
             return Array.from(map.values());
           });
         }
@@ -556,9 +564,13 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         (payload) => {
           if (payload.eventType === 'INSERT') {
             const incoming = payload.new as Appointment;
+            const matchedService = services.find(
+              (s) => s.duration_minutes === incoming.service_duration_minutes || s.price === Number(incoming.total_amount)
+            );
+            const enriched = { ...incoming, service: incoming.service || matchedService };
             setAppointments((prev) => {
               if (prev.some((a) => a.id === incoming.id)) return prev;
-              return [...prev, incoming];
+              return [...prev, enriched];
             });
           } else if (payload.eventType === 'UPDATE') {
             const updated = payload.new as Appointment;
@@ -775,7 +787,7 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     setAppointments((prev) => [...prev, newAppointment]);
     notifySync();
 
-    // Persistir en Supabase
+    // Persistir en Supabase de forma secuencial garantizando Foreign Keys
     if (isSupabaseConfigured && supabase) {
       supabase
         .from('customers')
@@ -791,32 +803,34 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
           total_appointments: customer.total_appointments,
           total_spent: customer.total_spent,
         })
-        .then(({ error }) => {
-          if (error) console.error('Supabase customer upsert error:', error);
-        });
-
-      supabase
-        .from('appointments')
-        .insert({
-          id: newAppointment.id,
-          organization_id: targetOrgId,
-          branch_id: newAppointment.branch_id,
-          professional_id: newAppointment.professional_id,
-          customer_id: customer.id,
-          status: newAppointment.status,
-          payment_status: newAppointment.payment_status,
-          starts_at: newAppointment.starts_at,
-          ends_at: newAppointment.ends_at,
-          service_duration_minutes: newAppointment.service_duration_minutes,
-          total_amount: newAppointment.total_amount,
-          deposit_amount: newAppointment.deposit_amount,
-          customer_notes: newAppointment.customer_notes || null,
-          booking_channel: newAppointment.booking_channel,
-          management_token: newAppointment.management_token,
-          management_token_expires_at: newAppointment.management_token_expires_at,
+        .then(({ error: custErr }) => {
+          if (custErr) console.error('Supabase customer upsert error:', custErr);
+          return supabase!
+            .from('appointments')
+            .insert({
+              id: newAppointment.id,
+              organization_id: targetOrgId,
+              branch_id: newAppointment.branch_id,
+              professional_id: newAppointment.professional_id,
+              customer_id: customer.id,
+              status: newAppointment.status,
+              payment_status: newAppointment.payment_status,
+              starts_at: newAppointment.starts_at,
+              ends_at: newAppointment.ends_at,
+              service_duration_minutes: newAppointment.service_duration_minutes,
+              total_amount: newAppointment.total_amount,
+              deposit_amount: newAppointment.deposit_amount,
+              customer_notes: newAppointment.customer_notes || null,
+              booking_channel: newAppointment.booking_channel,
+              management_token: newAppointment.management_token,
+              management_token_expires_at: newAppointment.management_token_expires_at,
+            });
         })
-        .then(({ error }) => {
-          if (error) console.error('Supabase appointment insert error:', error);
+        .then((res) => {
+          if (res?.error) console.error('Supabase appointment insert error:', res.error);
+        })
+        .catch((e) => {
+          console.error('Supabase sync error:', e);
         });
     }
 
