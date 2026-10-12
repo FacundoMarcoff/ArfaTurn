@@ -25,6 +25,18 @@ import { computeAvailableSlots, TimeSlot } from '../../lib/availability/engine';
 import { Service, Professional, Branch, Appointment } from '../../types/database.types';
 import { AddToCalendarButtons } from '../../components/calendar/AddToCalendarButtons';
 
+const formatLocalDateKey = (d: Date): string => {
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
+const parseLocalDateKey = (dateStr: string): Date => {
+  const [y, m, d] = dateStr.split('-').map(Number);
+  return new Date(y, m - 1, d, 0, 0, 0, 0);
+};
+
 export const PublicBookingPage: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
   const {
@@ -53,8 +65,7 @@ export const PublicBookingPage: React.FC = () => {
   const [selectedServiceId, setSelectedServiceId] = useState<string>('');
   const [selectedProfessionalId, setSelectedProfessionalId] = useState<string>('any');
   const [selectedDateStr, setSelectedDateStr] = useState<string>(() => {
-    const today = new Date();
-    return today.toISOString().split('T')[0];
+    return formatLocalDateKey(new Date());
   });
   const [selectedSlot, setSelectedSlot] = useState<TimeSlot | null>(null);
 
@@ -159,7 +170,7 @@ export const PublicBookingPage: React.FC = () => {
   // Compute available slots
   const availableSlots = useMemo(() => {
     if (!selectedBranch || !selectedService) return [];
-    const dateObj = new Date(selectedDateStr + 'T00:00:00');
+    const dateObj = parseLocalDateKey(selectedDateStr);
     return computeAvailableSlots({
       branch: selectedBranch,
       service: selectedService,
@@ -794,7 +805,7 @@ export const PublicBookingPage: React.FC = () => {
             {[0, 1, 2, 3, 4, 5, 6, 7].map((offset) => {
               const d = new Date();
               d.setDate(d.getDate() + offset);
-              const dateStr = d.toISOString().split('T')[0];
+              const dateStr = formatLocalDateKey(d);
               const isSelected = selectedDateStr === dateStr;
               const dayName = d.toLocaleDateString('es-AR', { weekday: 'short' });
               const dayNum = d.getDate();

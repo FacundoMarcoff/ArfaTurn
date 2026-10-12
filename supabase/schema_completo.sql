@@ -367,5 +367,22 @@ VALUES
   ('prod-shampoo', 'org-peluqueria', 'Shampoo Anticaída Fortificante (250ml)', 'Tratamiento', 6200, 14200, 8)
 ON CONFLICT (id) DO NOTHING;
 
+-- 6. PERMISOS Y SEGURIDAD (Permitir lectura y escritura a la aplicación web)
+ALTER TABLE organizations DISABLE ROW LEVEL SECURITY;
+ALTER TABLE branches DISABLE ROW LEVEL SECURITY;
+ALTER TABLE profiles DISABLE ROW LEVEL SECURITY;
+ALTER TABLE organization_members DISABLE ROW LEVEL SECURITY;
+ALTER TABLE professionals DISABLE ROW LEVEL SECURITY;
+ALTER TABLE services DISABLE ROW LEVEL SECURITY;
+ALTER TABLE resources DISABLE ROW LEVEL SECURITY;
+ALTER TABLE working_hours DISABLE ROW LEVEL SECURITY;
+ALTER TABLE customers DISABLE ROW LEVEL SECURITY;
+ALTER TABLE appointments DISABLE ROW LEVEL SECURITY;
+ALTER TABLE products DISABLE ROW LEVEL SECURITY;
+ALTER TABLE stock_movements DISABLE ROW LEVEL SECURITY;
+ALTER TABLE cash_sessions DISABLE ROW LEVEL SECURITY;
+ALTER TABLE sales DISABLE ROW LEVEL SECURITY;
+ALTER TABLE audit_logs DISABLE ROW LEVEL SECURITY;
+
 -- Mensaje de confirmación final
-SELECT 'Base de datos de TurnoPro creada y poblada exitosamente con la cuenta Admin y la cuenta Peluquería!' AS resultado;
+SELECT 'Base de datos de TurnoPro configurada exitosamente con permisos de lectura y escritura!' AS resultado;
