@@ -520,10 +520,9 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         const { data: dbAppointments, error: apptErr } = await supabase!
           .from('appointments')
           .select('*');
-        if (!apptErr && dbAppointments && dbAppointments.length > 0) {
-          setAppointments((prev) => {
+        if (!apptErr && dbAppointments) {
+          setAppointments(() => {
             const map = new Map<string, Appointment>();
-            prev.forEach((a) => map.set(a.id, a));
             dbAppointments.forEach((a: any) => {
               const matchedService = services.find(
                 (s) => s.duration_minutes === a.service_duration_minutes || s.price === Number(a.total_amount)
@@ -545,6 +544,56 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
             const map = new Map<string, Customer>();
             prev.forEach((c) => map.set(c.id, c));
             dbCustomers.forEach((c: any) => map.set(c.id, c));
+            return Array.from(map.values());
+          });
+        }
+
+        const { data: dbOrgs } = await supabase!.from('organizations').select('*');
+        if (dbOrgs && dbOrgs.length > 0) {
+          setOrganizations((prev) => {
+            const map = new Map<string, Organization>();
+            prev.forEach((o) => map.set(o.id, o));
+            dbOrgs.forEach((o: any) => map.set(o.id, o));
+            return Array.from(map.values());
+          });
+        }
+
+        const { data: dbBranches } = await supabase!.from('branches').select('*');
+        if (dbBranches && dbBranches.length > 0) {
+          setBranches((prev) => {
+            const map = new Map<string, Branch>();
+            prev.forEach((b) => map.set(b.id, b));
+            dbBranches.forEach((b: any) => map.set(b.id, b));
+            return Array.from(map.values());
+          });
+        }
+
+        const { data: dbProfs } = await supabase!.from('professionals').select('*');
+        if (dbProfs && dbProfs.length > 0) {
+          setProfessionals((prev) => {
+            const map = new Map<string, Professional>();
+            prev.forEach((p) => map.set(p.id, p));
+            dbProfs.forEach((p: any) => map.set(p.id, p));
+            return Array.from(map.values());
+          });
+        }
+
+        const { data: dbServices } = await supabase!.from('services').select('*');
+        if (dbServices && dbServices.length > 0) {
+          setServices((prev) => {
+            const map = new Map<string, Service>();
+            prev.forEach((s) => map.set(s.id, s));
+            dbServices.forEach((s: any) => map.set(s.id, s));
+            return Array.from(map.values());
+          });
+        }
+
+        const { data: dbWH } = await supabase!.from('working_hours').select('*');
+        if (dbWH && dbWH.length > 0) {
+          setWorkingHours((prev) => {
+            const map = new Map<string, WorkingHour>();
+            prev.forEach((w) => map.set(w.id, w));
+            dbWH.forEach((w: any) => map.set(w.id, w));
             return Array.from(map.values());
           });
         }
@@ -969,6 +1018,12 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       created_at: new Date().toISOString(),
     };
     setCustomers((prev) => [...prev, newCust]);
+    notifySync();
+    if (isSupabaseConfigured && supabase) {
+      supabase.from('customers').upsert(newCust).then(({ error }) => {
+        if (error) console.error('Supabase createCustomer error:', error);
+      });
+    }
     addAudit('customer.created', 'customers', newCust.id, { name: newCust.full_name });
     return newCust;
   };
@@ -977,6 +1032,12 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     setCustomers((prev) =>
       prev.map((c) => (c.id === customerId ? { ...c, ...updates } : c))
     );
+    notifySync();
+    if (isSupabaseConfigured && supabase) {
+      supabase.from('customers').update(updates).eq('id', customerId).then(({ error }) => {
+        if (error) console.error('Supabase updateCustomer error:', error);
+      });
+    }
     addAudit('customer.updated', 'customers', customerId, updates);
   };
 
@@ -1030,6 +1091,12 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       created_at: new Date().toISOString(),
     };
     setServices((prev) => [...prev, newService]);
+    notifySync();
+    if (isSupabaseConfigured && supabase) {
+      supabase.from('services').upsert(newService).then(({ error }) => {
+        if (error) console.error('Supabase createService error:', error);
+      });
+    }
     addAudit('service.created', 'services', newService.id, { name: newService.name });
     return newService;
   };
@@ -1038,6 +1105,12 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     setServices((prev) =>
       prev.map((s) => (s.id === serviceId ? { ...s, ...updates } : s))
     );
+    notifySync();
+    if (isSupabaseConfigured && supabase) {
+      supabase.from('services').update(updates).eq('id', serviceId).then(({ error }) => {
+        if (error) console.error('Supabase updateService error:', error);
+      });
+    }
     addAudit('service.updated', 'services', serviceId, updates);
   };
 
@@ -1062,12 +1135,24 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       created_at: new Date().toISOString(),
     };
     setProfessionals((prev) => [...prev, newProf]);
+    notifySync();
+    if (isSupabaseConfigured && supabase) {
+      supabase.from('professionals').upsert(newProf).then(({ error }) => {
+        if (error) console.error('Supabase createProfessional error:', error);
+      });
+    }
     addAudit('professional.created', 'professionals', newProf.id, { name: newProf.display_name });
     return newProf;
   };
 
   const deleteProfessional = (profId: string) => {
     setProfessionals((prev) => prev.filter((p) => p.id !== profId));
+    notifySync();
+    if (isSupabaseConfigured && supabase) {
+      supabase.from('professionals').delete().eq('id', profId).then(({ error }) => {
+        if (error) console.error('Supabase deleteProfessional error:', error);
+      });
+    }
     addAudit('professional.deleted', 'professionals', profId, {});
     return { success: true };
   };
@@ -1287,6 +1372,15 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     addAudit('organization.config_updated', 'organization', orgId, {
       updates,
     });
+    notifySync();
+    if (isSupabaseConfigured && supabase) {
+      const org = organizations.find((o) => o.id === orgId);
+      if (org) {
+        supabase.from('organizations').update({ account_config: org.account_config }).eq('id', orgId).then(({ error }) => {
+          if (error) console.error('Supabase updateOrgConfig error:', error);
+        });
+      }
+    }
   };
 
   const createBranch = (params: { name: string; address?: string; city?: string; phone?: string; timezone?: string }) => {
@@ -1320,7 +1414,39 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       created_at: new Date().toISOString(),
     };
 
+    const branchWH: WorkingHour[] = [
+      ...[1, 2, 3, 4, 5, 6].map((dayOfWeek) => ({
+        id: `wh-${newBranch.id}-${dayOfWeek}`,
+        organization_id: org.id,
+        branch_id: newBranch.id,
+        day_of_week: dayOfWeek,
+        open_time: '09:00',
+        close_time: '20:00',
+        is_enabled: true,
+      })),
+      {
+        id: `wh-${newBranch.id}-0`,
+        organization_id: org.id,
+        branch_id: newBranch.id,
+        day_of_week: 0,
+        open_time: '09:00',
+        close_time: '14:00',
+        is_enabled: false,
+      },
+    ];
+
     setBranches((prev) => [...prev, newBranch]);
+    setWorkingHours((prev) => [...prev, ...branchWH]);
+    notifySync();
+    if (isSupabaseConfigured && supabase) {
+      supabase.from('branches').upsert(newBranch).then(({ error }) => {
+        if (error) console.error('Supabase createBranch error:', error);
+      });
+      supabase.from('working_hours').upsert(branchWH).then(({ error }) => {
+        if (error) console.error('Supabase branchWH error:', error);
+      });
+    }
+
     addAudit('branch.created', 'branch', newBranch.id, { name: newBranch.name, organization_id: org.id });
     return { success: true, branch: newBranch };
   };
@@ -1329,6 +1455,15 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     setBranches((prev) =>
       prev.map((b) => (b.id === branchId ? { ...b, is_active: !b.is_active } : b))
     );
+    notifySync();
+    if (isSupabaseConfigured && supabase) {
+      const b = branches.find((branch) => branch.id === branchId);
+      if (b) {
+        supabase.from('branches').update({ is_active: !b.is_active }).eq('id', branchId).then(({ error }) => {
+          if (error) console.error('Supabase toggleBranch error:', error);
+        });
+      }
+    }
     addAudit('branch.status_toggled', 'branch', branchId, {});
     return { success: true };
   };
@@ -1483,8 +1618,30 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       is_public: true,
       is_active: true,
       commission_rate_pct: 100,
+      branch_ids: [firstBranch.id],
       created_at: new Date().toISOString(),
     };
+
+    const initialWH: WorkingHour[] = [
+      ...[1, 2, 3, 4, 5, 6].map((dayOfWeek) => ({
+        id: `wh-${firstBranch.id}-${dayOfWeek}`,
+        organization_id: newOrgId,
+        branch_id: firstBranch.id,
+        day_of_week: dayOfWeek,
+        open_time: '09:00',
+        close_time: '20:00',
+        is_enabled: true,
+      })),
+      {
+        id: `wh-${firstBranch.id}-0`,
+        organization_id: newOrgId,
+        branch_id: firstBranch.id,
+        day_of_week: 0,
+        open_time: '09:00',
+        close_time: '14:00',
+        is_enabled: false,
+      },
+    ];
 
     setProfiles((prev) => [...prev, newProfile]);
     setMemberships((prev) => [...prev, newMembership]);
@@ -1492,6 +1649,26 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     setProfessionals((prev) => [...prev, initialProf]);
     setOrganizations((prev) => [...prev, newOrg]);
     setBranches((prev) => [...prev, firstBranch]);
+    setWorkingHours((prev) => [...prev, ...initialWH]);
+    notifySync();
+
+    if (isSupabaseConfigured && supabase) {
+      supabase.from('organizations').upsert(newOrg).then(({ error }) => {
+        if (error) console.error('Supabase createOrg error:', error);
+      });
+      supabase.from('branches').upsert(firstBranch).then(({ error }) => {
+        if (error) console.error('Supabase createBranch error:', error);
+      });
+      supabase.from('professionals').upsert(initialProf).then(({ error }) => {
+        if (error) console.error('Supabase createProf error:', error);
+      });
+      supabase.from('services').upsert(initialServices).then(({ error }) => {
+        if (error) console.error('Supabase createServices error:', error);
+      });
+      supabase.from('working_hours').upsert(initialWH).then(({ error }) => {
+        if (error) console.error('Supabase createWH error:', error);
+      });
+    }
 
     addAudit('organization.created_by_admin', 'organization', newOrgId, {
       name: newOrg.name,
@@ -1521,6 +1698,13 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     setCashSessions((prev) => prev.filter((c) => c.organization_id !== orgId));
     setSales((prev) => prev.filter((s) => s.organization_id !== orgId));
     setWorkingHours((prev) => prev.filter((w) => w.organization_id !== orgId));
+    notifySync();
+
+    if (isSupabaseConfigured && supabase) {
+      supabase.from('organizations').delete().eq('id', orgId).then(({ error }) => {
+        if (error) console.error('Supabase deleteOrg error:', error);
+      });
+    }
 
     // 3. Remove non-superadmin user profiles that only belonged to this organization
     setProfiles((prev) =>
@@ -1547,9 +1731,39 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   // Auth & Multi-Account login/register actions (Con Usuario y Contraseña)
   const login = (identifier: string, password?: string, remember?: boolean) => {
     const normalized = identifier.trim().toLowerCase();
-    const user = profiles.find(
+    let user = profiles.find(
       (p) => p.username?.toLowerCase() === normalized || p.email?.toLowerCase() === normalized
     );
+    if (!user) {
+      // Reconocer dueños de comercios cargados en Supabase mediante account_config
+      const matchedOrg = organizations.find(
+        (o) => o.account_config?.owner_username?.toLowerCase() === normalized
+      );
+      if (matchedOrg) {
+        user = {
+          id: `user-${matchedOrg.id}`,
+          username: matchedOrg.account_config.owner_username,
+          password: matchedOrg.account_config.owner_password || 'password123',
+          email: `${matchedOrg.account_config.owner_username}@${matchedOrg.slug}.com`,
+          full_name: `Titular ${matchedOrg.name}`,
+          is_superadmin: false,
+          created_at: new Date().toISOString(),
+        };
+        setProfiles((prev) => [...prev, user!]);
+        setMemberships((prev) => [
+          ...prev,
+          {
+            id: `mem-${matchedOrg.id}`,
+            organization_id: matchedOrg.id,
+            user_id: user!.id,
+            role: 'owner',
+            is_active: true,
+            created_at: new Date().toISOString(),
+          },
+        ]);
+      }
+    }
+
     if (!user) {
       return {
         success: false,
