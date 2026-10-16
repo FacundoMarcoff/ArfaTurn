@@ -55,7 +55,7 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
     badge?: string;
   }
 
-  // Menú exclusivo según el rol
+  // Menú exclusivo según el rol - Lenguaje simple y claro para cualquier usuario
   const navItems: LayoutNavItem[] = currentUser.is_superadmin
     ? [
         {
@@ -66,13 +66,13 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
         },
       ]
     : [
-        { name: 'Agenda / Turnos', href: '/admin/calendar', icon: Calendar },
-        { name: 'Clientes / CRM', href: '/admin/clients', icon: Users },
-        { name: 'Servicios y Recursos', href: '/admin/services', icon: Scissors },
+        { name: 'Turnos y Agenda', href: '/admin/calendar', icon: Calendar },
+        { name: 'Mis Clientes', href: '/admin/clients', icon: Users },
+        { name: 'Caja y Cobros', href: '/admin/sales', icon: ReceiptText },
+        { name: 'Servicios y Precios', href: '/admin/services', icon: Scissors },
+        { name: 'Mi Equipo', href: '/admin/team', icon: ShieldCheck },
         { name: 'Productos y Stock', href: '/admin/inventory', icon: Package },
-        { name: 'Ventas y Caja POS', href: '/admin/sales', icon: ReceiptText },
-        { name: 'Equipo y Roles', href: '/admin/team', icon: ShieldCheck },
-        { name: 'Sucursal & Horarios', href: '/admin/branches', icon: Building2 },
+        { name: 'Horarios del Local', href: '/admin/branches', icon: Building2 },
       ];
 
   return (
@@ -302,7 +302,7 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
             }`}
           >
             <ReceiptText className="w-5 h-5" />
-            <span className="text-[10px] mt-0.5">Caja POS</span>
+            <span className="text-[10px] mt-0.5">Caja</span>
           </Link>
 
           <Link

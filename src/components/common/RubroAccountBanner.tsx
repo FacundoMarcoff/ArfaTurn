@@ -85,24 +85,17 @@ export const RubroAccountBanner: React.FC = () => {
         {expanded && (
           <div className="mt-3 pt-3 border-t border-[#E8E2D8] flex items-center justify-between gap-4 flex-wrap text-xs text-[#5E7166]">
             <div className="flex items-center gap-2 flex-wrap text-[11px]">
-              <span className="px-2 py-0.5 rounded-md bg-[#FAF8F2] border border-[#E8E2D8] text-[#24352C]">
-                {isMonoRole ? 'Modo Mono-Rol' : '6 Roles de Delegación'}
+              <span className="px-2.5 py-1 rounded-md bg-[#FAF8F2] border border-[#E8E2D8] text-[#24352C] font-medium">
+                {orgBranches.length} {orgBranches.length === 1 ? 'sucursal activa' : 'sucursales activas'}
               </span>
-              <span className="px-2 py-0.5 rounded-md bg-[#FAF8F2] border border-[#E8E2D8] text-[#24352C]">
-                {orgBranches.length} de {maxBranches} sucursal(es)
-              </span>
-              <span className="px-2 py-0.5 rounded-md bg-[#F7EFE4] text-[#28634C] border border-[#E8CDA8]/60 font-semibold">
-                Plan: {config?.subscription_type === 'vitalicio' ? 'Socio Vitalicio' : config?.subscription_label || 'Activo'}
+              <span className="px-2.5 py-1 rounded-md bg-[#F7EFE4] text-[#28634C] border border-[#E8CDA8]/60 font-semibold">
+                Estado: {config?.subscription_type === 'vitalicio' ? 'Licencia Vitalicia' : config?.subscription_label || 'Activa'}
               </span>
             </div>
 
-            <Link
-              to={`/admin/accounts?org=${currentOrg.id}`}
-              className="text-[#28634C] hover:underline font-semibold flex items-center gap-1 text-[11px]"
-            >
-              <Sliders className="w-3 h-3" />
-              <span>Configuración avanzada</span>
-            </Link>
+            <span className="text-[11px] text-[#5E7166]">
+              TurnoPro para Negocios
+            </span>
           </div>
         )}
       </div>

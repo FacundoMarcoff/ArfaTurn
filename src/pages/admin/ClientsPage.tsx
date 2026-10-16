@@ -3,19 +3,18 @@ import {
   Users,
   Search,
   Plus,
-  Tag,
   Phone,
   Mail,
   Calendar,
-  DollarSign,
   Lock,
   GitMerge,
-  History,
-  CheckCircle,
-  AlertTriangle,
   X,
-  FileText,
   ShieldAlert,
+  MessageCircle,
+  ExternalLink,
+  ChevronRight,
+  Clock,
+  CheckCircle2,
 } from 'lucide-react';
 import { useTenant } from '../../lib/store/tenant-context';
 import { Customer } from '../../types/database.types';
@@ -65,6 +64,12 @@ export const ClientsPage: React.FC = () => {
     });
   }, [customers, currentOrg.id, searchQuery]);
 
+  // Clean phone number for WhatsApp link
+  const getWhatsAppLink = (phone: string) => {
+    const cleanDigits = phone.replace(/\D/g, '');
+    return `https://wa.me/${cleanDigits}`;
+  };
+
   // Handle create customer
   const handleCreateCustomer = (e: React.FormEvent) => {
     e.preventDefault();
@@ -82,7 +87,7 @@ export const ClientsPage: React.FC = () => {
     setNewEmail('');
     setNewNotes('');
     setNewConfidential('');
-    setActionAlert('Cliente registrado exitosamente.');
+    setActionAlert('Cliente guardado exitosamente.');
   };
 
   // Handle merge customer
@@ -92,7 +97,7 @@ export const ClientsPage: React.FC = () => {
     if (res.success) {
       setShowMergeModal(false);
       setDuplicateIdToMerge('');
-      setActionAlert('Clientes fusionados y auditados correctamente.');
+      setActionAlert('Clientes unificados correctamente.');
     } else {
       alert(res.message);
     }
@@ -103,18 +108,23 @@ export const ClientsPage: React.FC = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-[#E8E2D8] shadow-xs">
         <div>
-          <h1 className="text-xl sm:text-2xl font-bold text-[#24352C] tracking-tight">Fichas de Clientes / CRM</h1>
-          <p className="text-xs text-[#5E7166] mt-1">
-            Historial de visitas, notas operativas, saldo y segmentación aislada por comercio.
+          <div className="flex items-center gap-2">
+            <span className="p-2 bg-[#FAF8F2] rounded-xl border border-[#E8E2D8] text-[#28634C]">
+              <Users className="w-5 h-5" />
+            </span>
+            <h1 className="text-xl sm:text-2xl font-bold text-[#24352C] tracking-tight">Mis Clientes</h1>
+          </div>
+          <p className="text-xs text-[#5E7166] mt-1.5">
+            Directorio de clientes de {currentOrg.name}. Contactalos por WhatsApp con un toque y revisá sus visitas.
           </p>
         </div>
 
         <button
           onClick={() => setShowNewModal(true)}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#28634C] hover:bg-[#1E4E3B] text-white font-semibold text-xs shadow-xs transition cursor-pointer"
+          className="flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-[#28634C] hover:bg-[#1E4E3B] text-white font-bold text-xs shadow-xs transition cursor-pointer min-h-[44px]"
         >
           <Plus className="w-4 h-4 text-[#E8CDA8]" />
-          <span>Nuevo Cliente</span>
+          <span>Agregar Cliente</span>
         </button>
       </div>
 
@@ -127,189 +137,276 @@ export const ClientsPage: React.FC = () => {
         </div>
       )}
 
-      {/* Search & List */}
-      <div className="bg-white rounded-2xl border border-[#E8E2D8] shadow-xs overflow-hidden">
-        <div className="p-4 border-b border-[#E8E2D8]">
-          <div className="relative max-w-md">
-            <Search className="w-4 h-4 text-[#5E7166] absolute left-3.5 top-1/2 -translate-y-1/2" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Buscar por nombre, teléfono, email o etiqueta..."
-              className="w-full pl-9 pr-4 py-2 bg-[#FAF8F2] border border-[#E8E2D8] rounded-xl text-xs text-[#24352C] focus:outline-[#28634C]"
-            />
-          </div>
+      {/* Search Bar */}
+      <div className="bg-white rounded-2xl border border-[#E8E2D8] shadow-xs p-3">
+        <div className="relative">
+          <Search className="w-4 h-4 text-[#5E7166] absolute left-3.5 top-1/2 -translate-y-1/2" />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Buscar por nombre, teléfono o email..."
+            className="w-full pl-10 pr-4 py-2.5 bg-[#FAF8F2] border border-[#E8E2D8] rounded-xl text-xs sm:text-sm text-[#24352C] focus:outline-[#28634C]"
+          />
         </div>
+      </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
-            <thead className="bg-[#FAF8F2] text-[#5E7166] font-semibold border-b border-[#E8E2D8]">
-              <tr>
-                <th className="px-4 py-3">Cliente</th>
-                <th className="px-4 py-3">Contacto</th>
-                <th className="px-4 py-3">Etiquetas</th>
-                <th className="px-4 py-3">Turnos</th>
-                <th className="px-4 py-3">Total Consumido</th>
-                <th className="px-4 py-3 text-right">Detalle</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-[#E8E2D8]">
-              {filteredCustomers.length === 0 ? (
-                <tr>
-                  <td colSpan={6} className="py-8 text-center text-[#5E7166]">
-                    No se encontraron clientes registrados en este comercio.
-                  </td>
-                </tr>
-              ) : (
-                filteredCustomers.map((cust) => (
-                  <tr
-                    key={cust.id}
-                    className="hover:bg-[#FAF8F2] transition cursor-pointer"
-                    onClick={() => setSelectedCustomer(cust)}
-                  >
-                    <td className="px-4 py-3">
-                      <div className="font-bold text-[#24352C]">{cust.full_name}</div>
-                      <div className="text-[10px] text-[#5E7166]">Desde {new Date(cust.created_at).toLocaleDateString()}</div>
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="text-[#24352C]">{cust.phone}</div>
-                      {cust.email && <div className="text-[11px] text-[#5E7166]">{cust.email}</div>}
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex flex-wrap gap-1">
-                        {cust.tags.map((t) => (
-                          <span
-                            key={t}
-                            className="px-2 py-0.5 rounded-md text-[10px] font-medium bg-[#F7EFE4] text-[#28634C] border border-[#E8CDA8]/60"
-                          >
-                            {t}
-                          </span>
-                        ))}
+      {/* Customer List: Cards on mobile, Table on desktop */}
+      <div className="bg-white rounded-2xl border border-[#E8E2D8] shadow-xs overflow-hidden">
+        {filteredCustomers.length === 0 ? (
+          <div className="py-12 text-center text-[#5E7166] space-y-2">
+            <Users className="w-8 h-8 text-[#5E7166]/40 mx-auto" />
+            <p className="font-medium text-sm">No encontramos clientes con esa búsqueda.</p>
+            <p className="text-xs text-[#5E7166]/80">Podés agregar uno nuevo con el botón verde superior.</p>
+          </div>
+        ) : (
+          <>
+            {/* Desktop Table View */}
+            <div className="hidden md:block overflow-x-auto">
+              <table className="w-full text-left text-xs">
+                <thead className="bg-[#FAF8F2] text-[#5E7166] font-semibold border-b border-[#E8E2D8]">
+                  <tr>
+                    <th className="px-5 py-3">Cliente</th>
+                    <th className="px-4 py-3">Teléfono</th>
+                    <th className="px-4 py-3">WhatsApp</th>
+                    <th className="px-4 py-3">Turnos realizados</th>
+                    <th className="px-4 py-3">Total consumido</th>
+                    <th className="px-5 py-3 text-right">Ficha</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[#E8E2D8]">
+                  {filteredCustomers.map((cust) => (
+                    <tr
+                      key={cust.id}
+                      className="hover:bg-[#FAF8F2]/60 transition cursor-pointer"
+                      onClick={() => setSelectedCustomer(cust)}
+                    >
+                      <td className="px-5 py-3.5">
+                        <div className="font-bold text-sm text-[#24352C]">{cust.full_name}</div>
+                        {cust.email && <div className="text-[11px] text-[#5E7166]">{cust.email}</div>}
+                      </td>
+                      <td className="px-4 py-3.5 text-[#24352C] font-mono font-medium">
+                        {cust.phone}
+                      </td>
+                      <td className="px-4 py-3.5">
+                        <a
+                          href={getWhatsAppLink(cust.phone)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={(e) => e.stopPropagation()}
+                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 font-semibold text-[11px] transition"
+                        >
+                          <MessageCircle className="w-3.5 h-3.5" />
+                          <span>Chat WhatsApp</span>
+                        </a>
+                      </td>
+                      <td className="px-4 py-3.5 font-semibold text-[#24352C] tabular-nums">
+                        {cust.total_appointments} {cust.total_appointments === 1 ? 'turno' : 'turnos'}
+                      </td>
+                      <td className="px-4 py-3.5 font-bold text-[#28634C] tabular-nums text-sm">
+                        ${cust.total_spent.toLocaleString()}
+                      </td>
+                      <td className="px-5 py-3.5 text-right">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedCustomer(cust);
+                          }}
+                          className="px-3 py-1.5 rounded-lg bg-[#FAF8F2] hover:bg-[#F2ECE4] border border-[#E8E2D8] text-[#28634C] font-bold text-xs transition cursor-pointer"
+                        >
+                          Ver Historial
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Mobile Card View (Easy thumbs & big targets) */}
+            <div className="md:hidden divide-y divide-[#E8E2D8]">
+              {filteredCustomers.map((cust) => (
+                <div
+                  key={cust.id}
+                  onClick={() => setSelectedCustomer(cust)}
+                  className="p-4 hover:bg-[#FAF8F2]/50 transition cursor-pointer space-y-3"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <h3 className="font-bold text-[#24352C] text-base">{cust.full_name}</h3>
+                      <div className="text-xs text-[#5E7166] mt-0.5 flex items-center gap-1.5 font-mono">
+                        <Phone className="w-3 h-3 text-[#28634C]" />
+                        <span>{cust.phone}</span>
                       </div>
-                    </td>
-                    <td className="px-4 py-3 font-medium text-[#24352C] tabular-nums">
+                    </div>
+                    <span className="text-xs font-bold text-[#28634C] px-2.5 py-1 rounded-lg bg-[#F7EFE4] border border-[#E8CDA8]/60 tabular-nums">
                       {cust.total_appointments} turnos
-                    </td>
-                    <td className="px-4 py-3 font-bold text-[#28634C] tabular-nums">
-                      ${cust.total_spent.toLocaleString()}
-                    </td>
-                    <td className="px-4 py-3 text-right">
+                    </span>
+                  </div>
+
+                  <div className="flex items-center justify-between pt-1">
+                    <div className="text-xs text-[#5E7166]">
+                      Gastado: <strong className="text-[#24352C]">${cust.total_spent.toLocaleString()}</strong>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <a
+                        href={getWhatsAppLink(cust.phone)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={(e) => e.stopPropagation()}
+                        className="p-2 rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 flex items-center gap-1 text-xs font-semibold"
+                        title="Enviar WhatsApp"
+                      >
+                        <MessageCircle className="w-4 h-4" />
+                        <span className="text-[11px]">WhatsApp</span>
+                      </a>
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
                           setSelectedCustomer(cust);
                         }}
-                        className="px-2.5 py-1 rounded-lg bg-[#EBF2EE] dark:bg-[#25382D] text-[#335946] dark:text-[#A1CEB5] font-semibold hover:bg-[#DFECE3] transition cursor-pointer"
+                        className="p-2 rounded-xl bg-[#FAF8F2] text-[#28634C] border border-[#E8E2D8] font-bold text-xs"
                       >
-                        Ver Ficha
+                        <ChevronRight className="w-4 h-4" />
                       </button>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
       </div>
 
       {/* DETAIL DRAWER / MODAL FOR SELECTED CUSTOMER */}
       {selectedCustomer && (
-        <div className="fixed inset-0 z-50 flex items-center justify-end bg-black/50 backdrop-blur-xs">
-          <div className="w-full max-w-xl bg-white dark:bg-[#201D1B] h-full shadow-2xl p-6 flex flex-col justify-between overflow-y-auto animate-in slide-in-from-right duration-200 border-l border-[#E8E2D8] dark:border-[#2D2825]">
+        <div className="fixed inset-0 z-50 flex items-center justify-end bg-black/40 backdrop-blur-xs">
+          <div className="w-full max-w-lg bg-white h-full shadow-2xl p-6 flex flex-col justify-between overflow-y-auto border-l border-[#E8E2D8]">
             <div className="space-y-6">
               {/* Drawer Header */}
-              <div className="flex items-center justify-between pb-4 border-b border-[#E8E2D8] dark:border-[#2D2825]">
-                <div>
-                  <h2 className="text-xl font-bold text-stone-900 dark:text-white">{selectedCustomer.full_name}</h2>
-                  <p className="text-xs text-stone-400">Ficha de Cliente • {currentOrg.name}</p>
+              <div className="flex items-center justify-between pb-4 border-b border-[#E8E2D8]">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-2xl bg-[#F7EFE4] text-[#28634C] font-bold text-lg flex items-center justify-center border border-[#E8CDA8]/60">
+                    {selectedCustomer.full_name.charAt(0)}
+                  </div>
+                  <div>
+                    <h2 className="text-lg sm:text-xl font-bold text-[#24352C]">{selectedCustomer.full_name}</h2>
+                    <p className="text-xs text-[#5E7166]">Cliente en {currentOrg.name}</p>
+                  </div>
                 </div>
                 <button
                   onClick={() => setSelectedCustomer(null)}
-                  className="p-1 rounded-xl text-stone-400 hover:text-stone-600 dark:hover:text-white"
+                  className="p-2 rounded-xl text-[#5E7166] hover:text-[#24352C] hover:bg-[#FAF8F2] cursor-pointer"
                 >
                   <X className="w-5 h-5" />
                 </button>
               </div>
 
-              {/* Quick Info Cards */}
+              {/* Direct Actions: WhatsApp & Call */}
               <div className="grid grid-cols-2 gap-3">
-                <div className="p-3 bg-[#FAF7F2] dark:bg-[#1A1817] rounded-xl border border-[#E8E2D8] dark:border-[#2D2825]">
-                  <span className="text-[11px] text-stone-400">Total Turnos</span>
-                  <div className="text-lg font-bold text-stone-900 dark:text-white tabular-nums">
+                <a
+                  href={getWhatsAppLink(selectedCustomer.phone)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-xs transition"
+                >
+                  <MessageCircle className="w-4 h-4" />
+                  <span>Enviar WhatsApp</span>
+                </a>
+                <a
+                  href={`tel:${selectedCustomer.phone}`}
+                  className="flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-[#FAF8F2] hover:bg-[#F2ECE4] text-[#24352C] border border-[#E8E2D8] font-bold text-xs transition"
+                >
+                  <Phone className="w-4 h-4 text-[#28634C]" />
+                  <span>Llamar</span>
+                </a>
+              </div>
+
+              {/* Metrics */}
+              <div className="grid grid-cols-2 gap-3">
+                <div className="p-3.5 bg-[#FAF8F2] rounded-xl border border-[#E8E2D8]">
+                  <span className="text-[11px] font-medium text-[#5E7166]">Turnos Realizados</span>
+                  <div className="text-xl font-bold text-[#24352C] tabular-nums mt-0.5">
                     {selectedCustomer.total_appointments}
                   </div>
                 </div>
-                <div className="p-3 bg-[#EBF2EE] dark:bg-[#1E2E25] rounded-xl border border-[#D5E3DB] dark:border-[#2E4738]">
-                  <span className="text-[11px] text-[#4A725D] dark:text-[#A1CEB5]">Total Gastado</span>
-                  <div className="text-lg font-bold text-[#2F4F3E] dark:text-[#B6E0CA] tabular-nums">
+                <div className="p-3.5 bg-[#F7EFE4] rounded-xl border border-[#E8CDA8]/60">
+                  <span className="text-[11px] font-medium text-[#28634C]">Total Invertido</span>
+                  <div className="text-xl font-bold text-[#28634C] tabular-nums mt-0.5">
                     ${selectedCustomer.total_spent.toLocaleString()}
                   </div>
                 </div>
               </div>
 
-              {/* Contact Data */}
-              <div className="space-y-2 text-xs">
-                <div className="flex items-center gap-2 text-stone-600 dark:text-stone-300">
-                  <Phone className="w-4 h-4 text-[#5E836F]" />
-                  <span>{selectedCustomer.phone}</span>
+              {/* Contact Information */}
+              <div className="p-3.5 bg-[#FAF8F2] rounded-xl border border-[#E8E2D8] space-y-2 text-xs">
+                <div className="flex items-center justify-between">
+                  <span className="text-[#5E7166]">Teléfono:</span>
+                  <span className="font-bold text-[#24352C] font-mono">{selectedCustomer.phone}</span>
                 </div>
                 {selectedCustomer.email && (
-                  <div className="flex items-center gap-2 text-stone-600 dark:text-stone-300">
-                    <Mail className="w-4 h-4 text-[#5E836F]" />
-                    <span>{selectedCustomer.email}</span>
+                  <div className="flex items-center justify-between">
+                    <span className="text-[#5E7166]">Email:</span>
+                    <span className="font-medium text-[#24352C]">{selectedCustomer.email}</span>
                   </div>
                 )}
               </div>
 
               {/* Operational Notes */}
               <div className="space-y-1.5">
-                <h3 className="text-xs font-bold text-stone-800 dark:text-stone-200 uppercase tracking-wider">
-                  Notas Operativas / Preferencias
+                <h3 className="text-xs font-bold text-[#24352C] uppercase tracking-wider">
+                  Notas / Preferencias del Cliente
                 </h3>
-                <div className="p-3 bg-[#FAF7F2] dark:bg-[#1A1817] rounded-xl border border-[#E8E2D8] dark:border-[#2D2825] text-xs text-stone-700 dark:text-stone-300">
-                  {selectedCustomer.notes || 'Sin notas registradas.'}
+                <div className="p-3.5 bg-[#FAF8F2] rounded-xl border border-[#E8E2D8] text-xs text-[#24352C] leading-relaxed">
+                  {selectedCustomer.notes || 'No hay notas registradas para este cliente.'}
                 </div>
               </div>
 
               {/* Confidential / Medical Notes (Secured by RBAC) */}
               <div className="space-y-1.5">
-                <div className="flex items-center gap-1.5 text-xs font-bold text-[#8C6B32] dark:text-[#E8C78A] uppercase tracking-wider">
+                <div className="flex items-center gap-1.5 text-xs font-bold text-[#28634C] uppercase tracking-wider">
                   <Lock className="w-3.5 h-3.5" />
-                  <span>Notas Confidenciales / Salud</span>
+                  <span>Notas Confidenciales / Ficha Médica</span>
                 </div>
                 {canViewConfidential ? (
-                  <div className="p-3 bg-[#FEF8ED] dark:bg-[#2D2418] rounded-xl border border-[#F3E5CB] dark:border-[#473822] text-xs text-[#8C6B32] dark:text-[#E8C78A]">
+                  <div className="p-3.5 bg-[#F7EFE4] rounded-xl border border-[#E8CDA8]/60 text-xs text-[#24352C] leading-relaxed">
                     {selectedCustomer.confidential_notes || 'Sin observaciones médicas o confidenciales.'}
                   </div>
                 ) : (
-                  <div className="p-3 bg-[#F2ECE4] dark:bg-[#262220] rounded-xl border border-[#E0D8CC] dark:border-[#38332F] text-xs text-stone-500 flex items-center gap-2">
-                    <ShieldAlert className="w-4 h-4 text-stone-400 shrink-0" />
-                    <span>Acceso restringido: Tu rol ({currentRole}) no tiene autorización para leer notas clínicas o confidenciales.</span>
+                  <div className="p-3 bg-[#FAF8F2] rounded-xl border border-[#E8E2D8] text-xs text-[#5E7166] flex items-center gap-2">
+                    <ShieldAlert className="w-4 h-4 text-[#5E7166] shrink-0" />
+                    <span>Solo visible para administradores y dueños.</span>
                   </div>
                 )}
               </div>
 
               {/* Appointments History */}
               <div className="space-y-2">
-                <h3 className="text-xs font-bold text-stone-800 dark:text-stone-200 uppercase tracking-wider">
+                <h3 className="text-xs font-bold text-[#24352C] uppercase tracking-wider">
                   Historial de Turnos
                 </h3>
-                <div className="space-y-2 max-h-48 overflow-y-auto">
+                <div className="space-y-2 max-h-52 overflow-y-auto">
                   {appointments
                     .filter((a) => a.customer_id === selectedCustomer.id)
                     .map((a) => (
                       <div
                         key={a.id}
-                        className="p-2.5 rounded-xl border border-[#E8E2D8] dark:border-[#2D2825] bg-[#FAF7F2]/50 dark:bg-[#1A1817]/50 text-xs flex items-center justify-between"
+                        className="p-3 rounded-xl border border-[#E8E2D8] bg-[#FAF8F2]/60 text-xs flex items-center justify-between"
                       >
                         <div>
-                          <div className="font-semibold text-stone-800 dark:text-stone-100 tabular-nums">
-                            {new Date(a.starts_at).toLocaleDateString()} - {new Date(a.starts_at).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })} hs
+                          <div className="font-bold text-[#24352C] tabular-nums">
+                            {new Date(a.starts_at).toLocaleDateString('es-AR', {
+                              day: 'numeric',
+                              month: 'short',
+                              year: 'numeric',
+                            })}
                           </div>
-                          <div className="text-[10px] text-stone-400 capitalize">{a.status}</div>
+                          <div className="text-[11px] text-[#5E7166] mt-0.5 capitalize">
+                            Estado: {a.status}
+                          </div>
                         </div>
-                        <span className="font-bold text-stone-800 dark:text-stone-200 tabular-nums">
+                        <span className="font-bold text-[#28634C] tabular-nums text-sm">
                           ${a.total_amount.toLocaleString()}
                         </span>
                       </div>
@@ -319,20 +416,20 @@ export const ClientsPage: React.FC = () => {
             </div>
 
             {/* Bottom Actions */}
-            <div className="pt-4 border-t border-[#E8E2D8] dark:border-[#2D2825] flex items-center justify-between gap-2">
+            <div className="pt-4 border-t border-[#E8E2D8] flex items-center justify-between gap-2">
               {canMerge && (
                 <button
                   onClick={() => setShowMergeModal(true)}
-                  className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-[#D5E3DB] dark:border-[#2E4738] text-[#335946] dark:text-[#A1CEB5] text-xs font-semibold hover:bg-[#EBF2EE] dark:hover:bg-[#203026] transition"
+                  className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-[#E8E2D8] text-[#5E7166] hover:text-[#24352C] text-xs font-semibold hover:bg-[#FAF8F2] transition cursor-pointer"
                 >
-                  <GitMerge className="w-3.5 h-3.5" />
-                  <span>Fusionar Duplicado</span>
+                  <GitMerge className="w-3.5 h-3.5 text-[#28634C]" />
+                  <span>Unificar Duplicado</span>
                 </button>
               )}
 
               <button
                 onClick={() => setSelectedCustomer(null)}
-                className="px-4 py-2 rounded-xl bg-[#F2ECE4] dark:bg-[#282421] text-xs font-semibold text-stone-700 dark:text-stone-300 hover:bg-[#E8E2D8] transition"
+                className="px-5 py-2.5 rounded-xl bg-[#28634C] text-white font-bold text-xs hover:bg-[#1E4E3B] transition cursor-pointer"
               >
                 Cerrar
               </button>
@@ -343,18 +440,21 @@ export const ClientsPage: React.FC = () => {
 
       {/* NEW CUSTOMER MODAL */}
       {showNewModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4">
-          <div className="w-full max-w-md bg-white dark:bg-[#201D1B] rounded-3xl border border-[#E8E2D8] dark:border-[#2D2825] p-6 shadow-2xl space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-[#E8E2D8] dark:border-[#2D2825]">
-              <h3 className="font-bold text-base text-stone-900 dark:text-white">Nuevo Cliente</h3>
-              <button onClick={() => setShowNewModal(false)} className="text-stone-400 hover:text-stone-600 dark:hover:text-stone-200">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs p-4">
+          <div className="w-full max-w-md bg-white rounded-3xl border border-[#E8E2D8] p-6 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-[#E8E2D8]">
+              <div>
+                <h3 className="font-bold text-base text-[#24352C]">Nuevo Cliente</h3>
+                <p className="text-xs text-[#5E7166]">Completá los datos para agendarlo y contactarlo.</p>
+              </div>
+              <button onClick={() => setShowNewModal(false)} className="text-[#5E7166] hover:text-[#24352C] cursor-pointer">
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <form onSubmit={handleCreateCustomer} className="space-y-3">
+            <form onSubmit={handleCreateCustomer} className="space-y-3.5">
               <div>
-                <label className="block text-xs font-semibold text-stone-700 dark:text-stone-300 mb-1">
+                <label className="block text-xs font-bold text-[#24352C] mb-1">
                   Nombre y Apellido *
                 </label>
                 <input
@@ -362,79 +462,79 @@ export const ClientsPage: React.FC = () => {
                   required
                   value={newName}
                   onChange={(e) => setNewName(e.target.value)}
-                  placeholder="Ej. Juan Pérez"
-                  className="w-full bg-[#FAF7F2] dark:bg-[#1A1817] border border-[#E4DDD2] dark:border-[#352F2B] rounded-xl px-3 py-2 text-xs text-stone-900 dark:text-white focus:outline-[#5E836F]"
+                  placeholder="Ej. Martín Gómez"
+                  className="w-full bg-[#FAF8F2] border border-[#E8E2D8] rounded-xl px-3.5 py-2.5 text-xs sm:text-sm text-[#24352C] focus:outline-[#28634C]"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-stone-700 dark:text-stone-300 mb-1">
-                  Teléfono *
+                <label className="block text-xs font-bold text-[#24352C] mb-1">
+                  Teléfono / WhatsApp *
                 </label>
                 <input
                   type="tel"
                   required
                   value={newPhone}
                   onChange={(e) => setNewPhone(e.target.value)}
-                  placeholder="+54 11 ..."
-                  className="w-full bg-[#FAF7F2] dark:bg-[#1A1817] border border-[#E4DDD2] dark:border-[#352F2B] rounded-xl px-3 py-2 text-xs text-stone-900 dark:text-white focus:outline-[#5E836F]"
+                  placeholder="Ej. +54 9 11 1234-5678"
+                  className="w-full bg-[#FAF8F2] border border-[#E8E2D8] rounded-xl px-3.5 py-2.5 text-xs sm:text-sm text-[#24352C] focus:outline-[#28634C]"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-stone-700 dark:text-stone-300 mb-1">
-                  Email
+                <label className="block text-xs font-bold text-[#24352C] mb-1">
+                  Email (opcional)
                 </label>
                 <input
                   type="email"
                   value={newEmail}
                   onChange={(e) => setNewEmail(e.target.value)}
                   placeholder="cliente@ejemplo.com"
-                  className="w-full bg-[#FAF7F2] dark:bg-[#1A1817] border border-[#E4DDD2] dark:border-[#352F2B] rounded-xl px-3 py-2 text-xs text-stone-900 dark:text-white focus:outline-[#5E836F]"
+                  className="w-full bg-[#FAF8F2] border border-[#E8E2D8] rounded-xl px-3.5 py-2.5 text-xs sm:text-sm text-[#24352C] focus:outline-[#28634C]"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-stone-700 dark:text-stone-300 mb-1">
-                  Notas Operativas
+                <label className="block text-xs font-bold text-[#24352C] mb-1">
+                  Notas o Preferencias (opcional)
                 </label>
                 <textarea
                   rows={2}
                   value={newNotes}
                   onChange={(e) => setNewNotes(e.target.value)}
-                  placeholder="Preferencias de atención, horarios..."
-                  className="w-full bg-[#FAF7F2] dark:bg-[#1A1817] border border-[#E4DDD2] dark:border-[#352F2B] rounded-xl px-3 py-2 text-xs text-stone-900 dark:text-white focus:outline-[#5E836F]"
+                  placeholder="Ej. Prefiere corte con tijera, café sin azúcar..."
+                  className="w-full bg-[#FAF8F2] border border-[#E8E2D8] rounded-xl px-3.5 py-2 text-xs sm:text-sm text-[#24352C] focus:outline-[#28634C]"
                 />
               </div>
 
               {canViewConfidential && (
                 <div>
-                  <label className="block text-xs font-semibold text-[#8C6B32] dark:text-[#E8C78A] mb-1">
-                    Nota Confidencial / Salud
+                  <label className="block text-xs font-bold text-[#28634C] mb-1">
+                    Nota Confidencial / Salud (opcional)
                   </label>
                   <textarea
                     rows={2}
                     value={newConfidential}
                     onChange={(e) => setNewConfidential(e.target.value)}
-                    placeholder="Historial médico o confidencial protegido..."
-                    className="w-full bg-[#FAF7F2] dark:bg-[#1A1817] border border-[#F3E5CB] dark:border-[#473822] rounded-xl px-3 py-2 text-xs text-stone-900 dark:text-white focus:outline-[#8C6B32]"
+                    placeholder="Alergias a productos, condiciones de piel..."
+                    className="w-full bg-[#F7EFE4] border border-[#E8CDA8]/60 rounded-xl px-3.5 py-2 text-xs sm:text-sm text-[#24352C] focus:outline-[#28634C]"
                   />
                 </div>
               )}
 
-              <div className="flex justify-end gap-2 pt-2 border-t border-[#E8E2D8] dark:border-[#2D2825]">
+              <div className="flex justify-end gap-2 pt-3 border-t border-[#E8E2D8]">
                 <button
                   type="button"
                   onClick={() => setShowNewModal(false)}
-                  className="px-4 py-2 rounded-xl border border-[#E4DDD2] dark:border-[#352F2B] text-xs font-semibold text-stone-600 dark:text-stone-300 hover:bg-[#F7F3EC] dark:hover:bg-[#282421] transition"
+                  className="px-4 py-2.5 rounded-xl border border-[#E8E2D8] text-xs font-bold text-[#5E7166] hover:bg-[#FAF8F2] transition cursor-pointer"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 rounded-xl bg-[#5E836F] hover:bg-[#4E705D] text-white font-semibold text-xs shadow-xs transition"
+                  className="px-5 py-2.5 rounded-xl bg-[#28634C] hover:bg-[#1E4E3B] text-white font-bold text-xs shadow-xs transition cursor-pointer"
                 >
-                  Guardar Ficha
+                  Guardar Cliente
                 </button>
               </div>
             </form>
@@ -444,27 +544,27 @@ export const ClientsPage: React.FC = () => {
 
       {/* MERGE CLIENTS MODAL */}
       {showMergeModal && selectedCustomer && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4">
-          <div className="w-full max-w-md bg-white dark:bg-[#201D1B] rounded-3xl border border-[#E8E2D8] dark:border-[#2D2825] p-6 shadow-2xl space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-[#E8E2D8] dark:border-[#2D2825]">
-              <h3 className="font-bold text-base text-stone-900 dark:text-white">Fusionar Ficha de Cliente</h3>
-              <button onClick={() => setShowMergeModal(false)} className="text-stone-400 hover:text-stone-600 dark:hover:text-stone-200">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs p-4">
+          <div className="w-full max-w-md bg-white rounded-3xl border border-[#E8E2D8] p-6 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-[#E8E2D8]">
+              <h3 className="font-bold text-base text-[#24352C]">Unificar Cliente Duplicado</h3>
+              <button onClick={() => setShowMergeModal(false)} className="text-[#5E7166] hover:text-[#24352C] cursor-pointer">
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <p className="text-xs text-stone-600 dark:text-stone-300 leading-relaxed">
-              Vas a conservar como principal la ficha de <strong>{selectedCustomer.full_name}</strong>. Seleccioná el registro duplicado que se unificará y registrará en la auditoría:
+            <p className="text-xs text-[#5E7166] leading-relaxed">
+              Vas a conservar como principal la ficha de <strong>{selectedCustomer.full_name}</strong>. Elegí el duplicado para unificar su historial:
             </p>
 
             <div>
-              <label className="block text-xs font-semibold text-stone-700 dark:text-stone-300 mb-1">
-                Ficha duplicada a absorber:
+              <label className="block text-xs font-bold text-[#24352C] mb-1">
+                Ficha duplicada a unificar:
               </label>
               <select
                 value={duplicateIdToMerge}
                 onChange={(e) => setDuplicateIdToMerge(e.target.value)}
-                className="w-full bg-[#FAF7F2] dark:bg-[#1A1817] border border-[#E4DDD2] dark:border-[#352F2B] rounded-xl px-3 py-2 text-xs text-stone-900 dark:text-white focus:outline-[#5E836F]"
+                className="w-full bg-[#FAF8F2] border border-[#E8E2D8] rounded-xl px-3 py-2.5 text-xs text-[#24352C] focus:outline-[#28634C]"
               >
                 <option value="">Seleccionar duplicado...</option>
                 {customers
@@ -477,19 +577,19 @@ export const ClientsPage: React.FC = () => {
               </select>
             </div>
 
-            <div className="flex justify-end gap-2 pt-2 border-t border-[#E8E2D8] dark:border-[#2D2825]">
+            <div className="flex justify-end gap-2 pt-3 border-t border-[#E8E2D8]">
               <button
                 onClick={() => setShowMergeModal(false)}
-                className="px-4 py-2 rounded-xl border border-[#E4DDD2] dark:border-[#352F2B] text-xs font-semibold text-stone-600 dark:text-stone-300 hover:bg-[#F7F3EC] dark:hover:bg-[#282421] transition"
+                className="px-4 py-2.5 rounded-xl border border-[#E8E2D8] text-xs font-bold text-[#5E7166] hover:bg-[#FAF8F2] transition cursor-pointer"
               >
                 Cancelar
               </button>
               <button
                 disabled={!duplicateIdToMerge}
                 onClick={handleMerge}
-                className="px-5 py-2 rounded-xl bg-[#5E836F] hover:bg-[#4E705D] disabled:opacity-50 text-white font-semibold text-xs shadow-xs transition"
+                className="px-5 py-2.5 rounded-xl bg-[#28634C] hover:bg-[#1E4E3B] disabled:opacity-50 text-white font-bold text-xs shadow-xs transition cursor-pointer"
               >
-                Confirmar Fusión
+                Confirmar
               </button>
             </div>
           </div>
