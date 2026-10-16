@@ -232,6 +232,9 @@ export interface Appointment {
   deposit_amount: number;
   customer_notes?: string;
   internal_notes?: string;
+  actual_duration_minutes?: number; // Duración real medida con el cronómetro
+  started_at?: string;             // Momento en que se presionó "Iniciar turno"
+  completed_at?: string;           // Momento en que se presionó "Ya terminé"
   booking_channel: 'public_web' | 'admin_backoffice' | 'app';
   management_token: string;
   management_token_expires_at: string;

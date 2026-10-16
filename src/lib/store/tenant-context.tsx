@@ -82,7 +82,7 @@ interface TenantContextType {
     paymentMethod?: PaymentMethod;
   }) => { success: boolean; appointment?: Appointment; message?: string };
 
-  updateAppointmentStatus: (appointmentId: string, status: AppointmentStatus) => void;
+  updateAppointmentStatus: (appointmentId: string, status: AppointmentStatus, extraUpdates?: Partial<Appointment>) => void;
   rescheduleAppointment: (appointmentId: string, newStartsAt: string, newProfessionalId?: string) => { success: boolean; message?: string };
   cancelAppointment: (appointmentId: string, reason?: string) => { success: boolean; message?: string };
 
@@ -896,23 +896,32 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     return { success: true, appointment: newAppointment };
   };
 
-  const updateAppointmentStatus = (appointmentId: string, status: AppointmentStatus) => {
+  const updateAppointmentStatus = (
+    appointmentId: string,
+    status: AppointmentStatus,
+    extraUpdates?: Partial<Appointment>
+  ) => {
     setAppointments((prev) =>
-      prev.map((appt) => (appt.id === appointmentId ? { ...appt, status } : appt))
+      prev.map((appt) =>
+        appt.id === appointmentId ? { ...appt, status, ...(extraUpdates || {}) } : appt
+      )
     );
     notifySync();
 
     if (isSupabaseConfigured && supabase) {
       supabase
         .from('appointments')
-        .update({ status })
+        .update({ status, ...(extraUpdates || {}) })
         .eq('id', appointmentId)
         .then(({ error }) => {
           if (error) console.error('Supabase status update error:', error);
         });
     }
 
-    addAudit('appointment.status_updated', 'appointments', appointmentId, { new_status: status });
+    addAudit('appointment.status_updated', 'appointments', appointmentId, {
+      new_status: status,
+      ...extraUpdates,
+    });
   };
 
   const rescheduleAppointment = (appointmentId: string, newStartsAt: string, newProfessionalId?: string) => {

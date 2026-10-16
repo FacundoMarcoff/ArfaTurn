@@ -32,6 +32,7 @@ import {
   Banknote,
   Smartphone,
   Phone,
+  Minimize2,
 } from 'lucide-react';
 import { useTenant } from '../../lib/store/tenant-context';
 import { AppointmentStatus, Appointment, PaymentMethod } from '../../types/database.types';
@@ -189,6 +190,9 @@ export const CalendarPage: React.FC = () => {
     return () => clearInterval(interval);
   }, []);
 
+  // Focus Pop-up Modal state (Mobile & Full-screen active turno view)
+  const [activeFocusAppt, setActiveFocusAppt] = useState<Appointment | null>(null);
+
   // Finish & Checkout Modal state
   const [finishModalAppt, setFinishModalAppt] = useState<Appointment | null>(null);
   const [finishPaymentMethod, setFinishPaymentMethod] = useState<PaymentMethod>('cash');
@@ -200,6 +204,25 @@ export const CalendarPage: React.FC = () => {
         a.branch_id === currentBranch.id &&
         a.status === 'in_progress'
     );
+  }, [appointments, currentOrg.id, currentBranch.id]);
+
+  // Statistics: Average duration of completed appointments
+  const durationStats = useMemo(() => {
+    const completed = appointments.filter(
+      (a) =>
+        a.organization_id === currentOrg.id &&
+        a.branch_id === currentBranch.id &&
+        a.status === 'completed' &&
+        a.actual_duration_minutes
+    );
+    if (completed.length === 0) return null;
+    const totalMinutes = completed.reduce((acc, c) => acc + (c.actual_duration_minutes || 0), 0);
+    const avg = Math.round(totalMinutes / completed.length);
+    return {
+      count: completed.length,
+      avgMinutes: avg,
+      totalMinutes,
+    };
   }, [appointments, currentOrg.id, currentBranch.id]);
 
   const getSessionStartTime = (appointmentId: string): number => {
@@ -215,12 +238,17 @@ export const CalendarPage: React.FC = () => {
   };
 
   const handleStartTurno = (appt: Appointment) => {
+    const nowIso = new Date().toISOString();
     localStorage.setItem(`tp_session_start_${appt.id}`, String(Date.now()));
     localStorage.setItem(`tp_session_extra_${appt.id}`, '0');
-    updateAppointmentStatus(appt.id, 'in_progress');
+    updateAppointmentStatus(appt.id, 'in_progress', {
+      started_at: nowIso,
+    });
+    // Open focus pop-up modal directly for mobile attention
+    setActiveFocusAppt({ ...appt, status: 'in_progress', started_at: nowIso });
     setActionMessage({
       type: 'success',
-      text: `▶ Turno iniciado. Cronómetro en marcha (${appt.service_duration_minutes || 30} min estimados).`,
+      text: `▶ Turno de ${appt.customer?.full_name || 'cliente'} iniciado. Cronómetro en marcha.`,
     });
   };
 
@@ -260,6 +288,7 @@ export const CalendarPage: React.FC = () => {
   };
 
   const handleOpenFinishModal = (appt: Appointment) => {
+    setActiveFocusAppt(null); // Close focus pop-up if open
     setFinishModalAppt(appt);
     setFinishPaymentMethod('cash');
   };
@@ -268,6 +297,7 @@ export const CalendarPage: React.FC = () => {
     const srv = services.find((s) => s.duration_minutes === appt.service_duration_minutes) || appt.service;
     const timing = getTurnoTiming(appt);
     const pendingAmount = Math.max(0, appt.total_amount - (appt.deposit_amount || 0));
+    const actualMinutes = timing.elapsedMinutes;
 
     createSale({
       branchId: currentBranch.id,
@@ -284,28 +314,44 @@ export const CalendarPage: React.FC = () => {
       ],
       paymentMethod: finishPaymentMethod,
       depositCreditApplied: appt.deposit_amount || 0,
-      notes: `Turno atendido (${timing.elapsedMinutes} min). Cobrado en mostrador vía ${finishPaymentMethod}.`,
+      notes: `Turno atendido (${actualMinutes} min reales). Cobrado en mostrador vía ${finishPaymentMethod}.`,
     });
 
-    updateAppointmentStatus(appt.id, 'completed');
+    updateAppointmentStatus(appt.id, 'completed', {
+      actual_duration_minutes: actualMinutes,
+      completed_at: new Date().toISOString(),
+      internal_notes: `Duración real de atención: ${actualMinutes} min (Estimado: ${timing.durationMinutes} min).`,
+    });
+
     localStorage.removeItem(`tp_session_start_${appt.id}`);
     localStorage.removeItem(`tp_session_extra_${appt.id}`);
 
+    setActiveFocusAppt(null);
     setFinishModalAppt(null);
     setActionMessage({
       type: 'success',
-      text: `✓ ¡Turno finalizado! Se registró el cobro de $${pendingAmount.toLocaleString()} en la caja.`,
+      text: `✓ ¡Turno finalizado! Duración registrada: ${actualMinutes} min. Cobro de $${pendingAmount.toLocaleString()} asentado en caja.`,
     });
   };
 
   const handleFinishWithoutPay = (appt: Appointment) => {
-    updateAppointmentStatus(appt.id, 'completed');
+    const timing = getTurnoTiming(appt);
+    const actualMinutes = timing.elapsedMinutes;
+
+    updateAppointmentStatus(appt.id, 'completed', {
+      actual_duration_minutes: actualMinutes,
+      completed_at: new Date().toISOString(),
+      internal_notes: `Duración real: ${actualMinutes} min.`,
+    });
+
     localStorage.removeItem(`tp_session_start_${appt.id}`);
     localStorage.removeItem(`tp_session_extra_${appt.id}`);
+
+    setActiveFocusAppt(null);
     setFinishModalAppt(null);
     setActionMessage({
       type: 'success',
-      text: 'Turno marcado como finalizado.',
+      text: `Turno marcado como finalizado. Duración real: ${actualMinutes} min.`,
     });
   };
 
@@ -397,7 +443,15 @@ export const CalendarPage: React.FC = () => {
                   </div>
 
                   {/* Actions */}
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <button
+                      type="button"
+                      onClick={() => setActiveFocusAppt(inProgAppt)}
+                      className="px-3.5 py-2.5 rounded-xl bg-white/20 hover:bg-white/30 text-white font-bold text-xs border border-white/25 transition cursor-pointer flex items-center gap-1.5 shadow-2xs"
+                      title="Abrir vista exclusiva para celular"
+                    >
+                      <span>📱 Pantalla de atención</span>
+                    </button>
                     <button
                       type="button"
                       onClick={() => handleAddMinutes(inProgAppt.id, 5)}
@@ -732,15 +786,22 @@ export const CalendarPage: React.FC = () => {
                                 </button>
                               )}
 
-                              {/* In-progress actions: +5min & Ya terminé */}
+                              {/* In-progress actions: Pop-up, +5min & Ya terminé */}
                               {appt.status === 'in_progress' && (
                                 <>
                                   <button
+                                    onClick={() => setActiveFocusAppt(appt)}
+                                    className="py-2 px-2.5 rounded-xl border border-[#28634C]/40 bg-[#28634C]/10 hover:bg-[#28634C]/20 text-[11px] font-bold text-[#28634C] transition cursor-pointer flex items-center gap-1 shadow-2xs"
+                                    title="Abrir pantalla completa para celular"
+                                  >
+                                    <span>📱 Pop-up</span>
+                                  </button>
+                                  <button
                                     onClick={() => handleAddMinutes(appt.id, 5)}
-                                    className="py-2 px-2.5 rounded-xl border border-[#E8E2D8] bg-white hover:bg-[#FAF8F2] text-[11px] font-bold text-[#24352C] transition cursor-pointer"
+                                    className="py-2 px-2 rounded-xl border border-[#E8E2D8] bg-white hover:bg-[#FAF8F2] text-[11px] font-bold text-[#24352C] transition cursor-pointer"
                                     title="Extender 5 minutos más"
                                   >
-                                    +5 min
+                                    +5m
                                   </button>
                                   <button
                                     onClick={() => handleOpenFinishModal(appt)}
@@ -753,8 +814,13 @@ export const CalendarPage: React.FC = () => {
                               )}
 
                               {appt.status === 'completed' && (
-                                <div className="flex-1 py-1.5 text-center text-xs font-semibold text-[#28634C] bg-[#FAF8F2] rounded-xl border border-[#E8E2D8]">
-                                  ✓ Atendido y cobrado
+                                <div className="flex-1 py-1.5 px-2 text-center text-xs font-semibold text-[#28634C] bg-[#FAF8F2] rounded-xl border border-[#E8E2D8] flex items-center justify-center gap-1.5 flex-wrap">
+                                  <span>✓ Atendido y cobrado</span>
+                                  {appt.actual_duration_minutes && (
+                                    <span className="px-1.5 py-0.5 rounded-md bg-[#28634C]/10 text-[#28634C] text-[10px] font-bold">
+                                      ⏱️ {appt.actual_duration_minutes} min reales
+                                    </span>
+                                  )}
                                 </div>
                               )}
 
@@ -830,7 +896,14 @@ export const CalendarPage: React.FC = () => {
                       <td className="px-4 py-3 font-medium text-stone-700 dark:text-stone-300">
                         {prof?.display_name}
                       </td>
-                      <td className="px-4 py-3">{renderStatusBadge(appt.status)}</td>
+                      <td className="px-4 py-3">
+                        {renderStatusBadge(appt.status)}
+                        {appt.actual_duration_minutes && (
+                          <span className="text-[10px] text-[#28634C] font-semibold block mt-1">
+                            ⏱️ {appt.actual_duration_minutes} min reales
+                          </span>
+                        )}
+                      </td>
                       <td className="px-4 py-3 font-bold text-stone-900 dark:text-stone-100 tabular-nums">
                         ${appt.total_amount.toLocaleString()}
                       </td>
@@ -846,13 +919,22 @@ export const CalendarPage: React.FC = () => {
                             </button>
                           )}
                           {appt.status === 'in_progress' && (
-                            <button
-                              onClick={() => handleOpenFinishModal(appt)}
-                              className="px-2.5 py-1 text-[11px] font-bold rounded-lg bg-[#E8CDA8] hover:bg-[#dfc097] text-[#24352C] transition flex items-center gap-1 shadow-2xs cursor-pointer"
-                            >
-                              <CheckCircle2 className="w-3 h-3 text-[#28634C]" />
-                              <span>Ya terminé</span>
-                            </button>
+                            <div className="flex items-center gap-1">
+                              <button
+                                onClick={() => setActiveFocusAppt(appt)}
+                                className="px-2 py-1 text-[11px] font-bold rounded-lg bg-white border border-[#28634C]/40 text-[#28634C] transition flex items-center gap-1 cursor-pointer"
+                                title="Abrir pop-up completo para celular"
+                              >
+                                <span>📱 Pop-up</span>
+                              </button>
+                              <button
+                                onClick={() => handleOpenFinishModal(appt)}
+                                className="px-2.5 py-1 text-[11px] font-bold rounded-lg bg-[#E8CDA8] hover:bg-[#dfc097] text-[#24352C] transition flex items-center gap-1 shadow-2xs cursor-pointer"
+                              >
+                                <CheckCircle2 className="w-3 h-3 text-[#28634C]" />
+                                <span>Ya terminé</span>
+                              </button>
+                            </div>
                           )}
                           <button
                             onClick={() => {
@@ -1097,6 +1179,181 @@ export const CalendarPage: React.FC = () => {
         </div>
       )}
 
+      {/* MODAL / POP-UP EXCLUSIVO DE ATENCIÓN EN CELULAR & PANTALLA COMPLETA */}
+      {activeFocusAppt && (() => {
+        const cust = customers.find((c) => c.id === activeFocusAppt.customer_id);
+        const prof = professionals.find((p) => p.id === activeFocusAppt.professional_id);
+        const srv =
+          services.find((s) => s.duration_minutes === activeFocusAppt.service_duration_minutes) ||
+          activeFocusAppt.service;
+        const timing = getTurnoTiming(activeFocusAppt);
+        const deposit = activeFocusAppt.deposit_amount || 0;
+        const pendingAmount = Math.max(0, activeFocusAppt.total_amount - deposit);
+        const cleanPhone = cust?.phone?.replace(/\D/g, '') || '';
+        const startTime = new Date(activeFocusAppt.starts_at).toLocaleTimeString('es-AR', {
+          hour: '2-digit',
+          minute: '2-digit',
+        });
+        const endTime = new Date(activeFocusAppt.ends_at).toLocaleTimeString('es-AR', {
+          hour: '2-digit',
+          minute: '2-digit',
+        });
+
+        return (
+          <div className="fixed inset-0 z-50 bg-[#16221C]/85 backdrop-blur-md flex flex-col justify-between sm:justify-center items-center p-3 sm:p-6 overflow-y-auto animate-in fade-in">
+            <div className="w-full max-w-lg bg-white rounded-3xl border-2 border-[#E8CDA8] shadow-2xl p-5 sm:p-7 flex flex-col justify-between gap-5 my-auto animate-in zoom-in-95">
+              {/* Header */}
+              <div className="flex items-center justify-between pb-3 border-b border-[#E8E2D8]">
+                <div className="flex items-center gap-2">
+                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping" />
+                  <span className="text-xs font-bold uppercase tracking-wider text-[#28634C] bg-[#28634C]/10 px-2.5 py-0.5 rounded-full">
+                    Atención en Curso
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setActiveFocusAppt(null)}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-[#E8E2D8] text-xs font-semibold text-[#5E7166] hover:bg-[#FAF8F2] transition cursor-pointer"
+                  title="Minimizar pop-up para ver la agenda"
+                >
+                  <Minimize2 className="w-3.5 h-3.5" />
+                  <span>Minimizar</span>
+                </button>
+              </div>
+
+              {/* Giant Digital Clock */}
+              <div className="bg-gradient-to-b from-[#FAF8F2] to-[#F7EFE4] p-5 sm:p-6 rounded-2xl border border-[#E8CDA8]/80 text-center space-y-3 shadow-inner">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-[#5E7166] block">
+                  {timing.isOverTime ? '⚠️ Tiempo estimado superado' : 'Tiempo restante del turno'}
+                </span>
+
+                <div
+                  className={`text-5xl sm:text-6xl font-black font-mono tracking-tight tabular-nums ${
+                    timing.isOverTime ? 'text-amber-600' : 'text-[#28634C]'
+                  }`}
+                >
+                  {timing.isOverTime ? `+${timing.formattedOvertime}` : timing.formattedRemaining}
+                </div>
+
+                {/* Progress bar */}
+                <div className="w-full bg-[#E8E2D8] h-3 rounded-full overflow-hidden shadow-xs">
+                  <div
+                    className={`h-full transition-all duration-1000 ${
+                      timing.isOverTime ? 'bg-amber-500' : 'bg-[#28634C]'
+                    }`}
+                    style={{ width: `${timing.pct}%` }}
+                  />
+                </div>
+
+                <div className="flex items-center justify-between text-xs text-[#5E7166] pt-1">
+                  <span>
+                    ⏱️ Transcurrido: <strong>{timing.elapsedMinutes} min</strong>
+                  </span>
+                  <span>
+                    Estimado: <strong>{timing.durationMinutes} min</strong> ({startTime} - {endTime} hs)
+                  </span>
+                </div>
+
+                {/* Quick Add Minutes Pills */}
+                <div className="flex items-center justify-center gap-2 pt-2 border-t border-[#E8CDA8]/40">
+                  <span className="text-[11px] font-semibold text-[#5E7166]">Extender tiempo:</span>
+                  <button
+                    type="button"
+                    onClick={() => handleAddMinutes(activeFocusAppt.id, 5)}
+                    className="px-3 py-1 rounded-lg bg-white border border-[#E8E2D8] hover:border-[#28634C] text-xs font-bold text-[#24352C] transition shadow-2xs active:scale-95 cursor-pointer"
+                  >
+                    +5 min
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleAddMinutes(activeFocusAppt.id, 10)}
+                    className="px-3 py-1 rounded-lg bg-white border border-[#E8E2D8] hover:border-[#28634C] text-xs font-bold text-[#24352C] transition shadow-2xs active:scale-95 cursor-pointer"
+                  >
+                    +10 min
+                  </button>
+                </div>
+              </div>
+
+              {/* Customer & Turn Details */}
+              <div className="space-y-3">
+                {/* Cliente */}
+                <div className="p-4 rounded-2xl bg-[#FAF8F2] border border-[#E8E2D8] flex items-center justify-between gap-3">
+                  <div>
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-[#5E7166] block">
+                      Cliente
+                    </span>
+                    <h4 className="font-bold text-base text-[#24352C]">{cust?.full_name || 'Cliente'}</h4>
+                    <p className="text-xs text-[#5E7166] mt-0.5">{cust?.phone || 'Sin teléfono registrado'}</p>
+                  </div>
+                  {cleanPhone && (
+                    <a
+                      href={`https://wa.me/${cleanPhone}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-xs transition active:scale-95 cursor-pointer shrink-0"
+                    >
+                      <Phone className="w-3.5 h-3.5" />
+                      <span>WhatsApp</span>
+                    </a>
+                  )}
+                </div>
+
+                {/* Servicio y Cobro */}
+                <div className="grid grid-cols-2 gap-2.5">
+                  <div className="p-3.5 rounded-2xl bg-[#FAF8F2] border border-[#E8E2D8]">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-[#5E7166] block">
+                      Servicio
+                    </span>
+                    <div className="font-bold text-xs text-[#24352C] mt-0.5 line-clamp-1">
+                      {srv?.name || 'Servicio'}
+                    </div>
+                    <span className="text-[11px] text-[#28634C] font-semibold mt-0.5 block">
+                      {prof?.display_name ? `Atiende ${prof.display_name}` : 'Profesional'}
+                    </span>
+                  </div>
+
+                  <div className="p-3.5 rounded-2xl bg-[#FAF8F2] border border-[#E8E2D8]">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-[#5E7166] block">
+                      Total a Cobrar
+                    </span>
+                    <div className="font-extrabold text-base text-[#28634C] mt-0.5 tabular-nums">
+                      ${pendingAmount.toLocaleString()}
+                    </div>
+                    {deposit > 0 && (
+                      <span className="text-[10px] text-emerald-700 font-semibold block">
+                        (Seña previa: -${deposit.toLocaleString()})
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Customer Notes */}
+                {activeFocusAppt.customer_notes && (
+                  <div className="p-3 rounded-2xl bg-[#F7EFE4] border border-[#E8CDA8]/80 text-xs text-[#24352C] space-y-0.5">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-[#8C6B32] block">
+                      Pedido / Nota del cliente:
+                    </span>
+                    <p className="italic font-medium">"{activeFocusAppt.customer_notes}"</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Giant "Ya terminé" Primary Action Button */}
+              <div className="pt-2 border-t border-[#E8E2D8]">
+                <button
+                  type="button"
+                  onClick={() => handleOpenFinishModal(activeFocusAppt)}
+                  className="w-full py-4 rounded-2xl bg-[#28634C] hover:bg-[#1E4D3B] text-[#FAF8F2] font-bold text-base shadow-lg transition hover:shadow-xl active:scale-98 cursor-pointer flex items-center justify-center gap-2"
+                >
+                  <CheckCircle2 className="w-5 h-5 text-[#E8CDA8]" />
+                  <span>✓ Ya terminé (Ir a Cobro)</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
       {/* MODAL: RESUMEN DE ATENCIÓN & COBRO */}
       {finishModalAppt && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-stone-900/60 backdrop-blur-xs p-4">
@@ -1109,7 +1366,7 @@ export const CalendarPage: React.FC = () => {
                 </div>
                 <div>
                   <h3 className="font-bold text-lg text-[#24352C]">¡Turno Finalizado!</h3>
-                  <p className="text-xs text-[#5E7166]">Resumen del servicio y cobro en mostrador</p>
+                  <p className="text-xs text-[#5E7166]">Resumen del servicio, estadísticas y cobro</p>
                 </div>
               </div>
               <button
@@ -1163,10 +1420,10 @@ export const CalendarPage: React.FC = () => {
                     )}
                   </div>
 
-                  {/* Card 2: Lo que se realizó */}
-                  <div className="p-4 rounded-2xl bg-[#FAF8F2] border border-[#E8E2D8] space-y-2">
+                  {/* Card 2: Lo que se realizó y Estadística de Tiempo */}
+                  <div className="p-4 rounded-2xl bg-[#FAF8F2] border border-[#E8E2D8] space-y-2.5">
                     <div className="text-[11px] font-bold uppercase tracking-wider text-[#5E7166]">
-                      Servicio Realizado
+                      Servicio Realizado & Estadística
                     </div>
                     <div className="flex items-center justify-between">
                       <span className="font-bold text-sm text-[#24352C]">{srv?.name || 'Servicio de Atención'}</span>
@@ -1174,10 +1431,17 @@ export const CalendarPage: React.FC = () => {
                         {prof?.display_name || 'Profesional'}
                       </span>
                     </div>
-                    <div className="text-xs text-[#5E7166] flex items-center gap-2 pt-1 border-t border-[#E8E2D8]">
-                      <Clock className="w-3.5 h-3.5 text-[#28634C]" />
-                      <span>
-                        Tiempo: <strong>{timing.elapsedMinutes} min dedicados</strong> (Estimado: {timing.durationMinutes} min)
+                    <div className="text-xs text-[#5E7166] flex items-center justify-between pt-1 border-t border-[#E8E2D8]">
+                      <div className="flex items-center gap-1.5">
+                        <Clock className="w-3.5 h-3.5 text-[#28634C]" />
+                        <span>
+                          Duración real: <strong>{timing.elapsedMinutes} min registrados</strong>
+                        </span>
+                      </div>
+                      <span className="text-[11px] font-semibold text-[#28634C] bg-[#28634C]/10 px-2 py-0.5 rounded-md">
+                        {timing.elapsedMinutes <= timing.durationMinutes
+                          ? `✓ A tiempo (est: ${timing.durationMinutes} min)`
+                          : `⚠️ +${timing.elapsedMinutes - timing.durationMinutes} min extra`}
                       </span>
                     </div>
                   </div>
