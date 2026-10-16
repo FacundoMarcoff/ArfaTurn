@@ -173,190 +173,82 @@ export const CalendarPage: React.FC = () => {
   const renderStatusBadge = (status: AppointmentStatus) => {
     switch (status) {
       case 'confirmed':
-        return <span className="px-2 py-0.5 rounded-md text-[11px] font-semibold bg-[#EAF2ED] dark:bg-[#203026] text-[#2F4F3E] dark:text-[#A1CEB5] border border-[#D5E3DB] dark:border-[#2E4738]">Confirmado</span>;
+        return <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-[#F7EFE4] text-[#28634C] border border-[#E8CDA8]/60">Confirmado</span>;
       case 'checked_in':
-        return <span className="px-2 py-0.5 rounded-md text-[11px] font-semibold bg-[#EEF3F8] dark:bg-[#1E2A34] text-[#34536E] dark:text-[#9DC3E2] border border-[#D3E1EC] dark:border-[#2E4252]">Presente</span>;
+        return <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200">En Sala</span>;
       case 'in_progress':
-        return <span className="px-2 py-0.5 rounded-md text-[11px] font-semibold bg-[#F4EFF8] dark:bg-[#2B2035] text-[#553E6E] dark:text-[#C7B2E2] border border-[#E0D5EB] dark:border-[#423252]">En Atención</span>;
+        return <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-amber-50 text-amber-900 border border-amber-200">En Atención</span>;
       case 'completed':
-        return <span className="px-2 py-0.5 rounded-md text-[11px] font-semibold bg-[#F2ECE4] dark:bg-[#2A2624] text-stone-600 dark:text-stone-300 border border-[#E0D8CC] dark:border-[#38332F]">Completado</span>;
+        return <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-stone-100 text-stone-600 border border-stone-200">Completado</span>;
       case 'cancelled':
-        return <span className="px-2 py-0.5 rounded-md text-[11px] font-semibold bg-[#FDF2F0] dark:bg-[#331E1B] text-[#9E4B3E] dark:text-[#EAA399] border border-[#ECD3CC] dark:border-[#4E2B25]">Cancelado</span>;
+        return <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-red-50 text-red-700 border border-red-200">Cancelado</span>;
       case 'pending_payment':
-        return <span className="px-2 py-0.5 rounded-md text-[11px] font-semibold bg-[#FEF8ED] dark:bg-[#332A1C] text-[#8C6B32] dark:text-[#E8C78A] border border-[#F3E5CB] dark:border-[#4D3F28]">Seña Pendiente</span>;
+        return <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-[#F7EFE4] text-[#8C6B32] border border-[#E8CDA8]/60">Seña Pendiente</span>;
       default:
-        return <span className="px-2 py-0.5 rounded-md text-[11px] font-semibold bg-[#F2ECE4] dark:bg-[#2A2624] text-stone-600 dark:text-stone-300">{status}</span>;
+        return <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-[#FAF8F2] text-stone-600">{status}</span>;
     }
   };
 
   return (
-    <div className="space-y-6">
-      {/* Rubro & Account Identification Banner */}
+    <div className="space-y-5">
+      {/* Rubro & Account Identification Banner (Minimal & Sleek) */}
       <RubroAccountBanner />
 
-      {/* Top Banner / Actions Bar */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white dark:bg-[#201D1B] p-5 rounded-2xl border border-[#E8E2D8] dark:border-[#2D2825] shadow-xs">
-        <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-xl sm:text-2xl font-bold text-stone-900 dark:text-white tracking-tight">Agenda Operativa</h1>
-            <span className="text-xs font-semibold px-2.5 py-0.5 rounded-lg bg-[#EBF2EE] dark:bg-[#25382D] text-[#335946] dark:text-[#A1CEB5] border border-[#D5E3DB] dark:border-[#314A3B]">
-              {currentBranch.name}
-            </span>
-          </div>
-          <p className="text-xs text-stone-500 dark:text-stone-400 mt-1">
-            Gestión en tiempo real de turnos, check-in, estados de atención y reprogramaciones.
-          </p>
-        </div>
-
-        <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
-          {/* View toggle */}
-          <div className="flex items-center bg-[#F7F3EC] dark:bg-[#282421] p-1 rounded-xl text-xs font-semibold">
-            <button
-              onClick={() => setViewMode('day')}
-              className={`px-3 py-1.5 rounded-lg transition ${
-                viewMode === 'day'
-                  ? 'bg-white dark:bg-[#201D1B] text-[#335946] dark:text-[#A1CEB5] shadow-xs font-bold'
-                  : 'text-stone-600 dark:text-stone-400 hover:text-stone-900'
-              }`}
-            >
-              Día
-            </button>
-            <button
-              onClick={() => setViewMode('list')}
-              className={`px-3 py-1.5 rounded-lg transition ${
-                viewMode === 'list'
-                  ? 'bg-white dark:bg-[#201D1B] text-[#335946] dark:text-[#A1CEB5] shadow-xs font-bold'
-                  : 'text-stone-600 dark:text-stone-400 hover:text-stone-900'
-              }`}
-            >
-              Lista
-            </button>
-          </div>
-
-          {/* Public booking link buttons */}
-          <div className="flex items-center gap-1.5">
-            <a
-              href={`/reservar/${currentOrg.slug}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-[#E4DDD2] dark:border-[#352F2B] bg-[#FAF7F2] dark:bg-[#282421] hover:bg-[#F2ECE4] dark:hover:bg-[#352F2B] text-xs font-semibold text-stone-700 dark:text-stone-200 transition shadow-2xs"
-              title="Abrir página pública donde los clientes reservan sus turnos"
-            >
-              <Globe className="w-3.5 h-3.5 text-[#335946] dark:text-[#A1CEB5]" />
-              <span>Ver Turnero Web</span>
-              <ExternalLink className="w-3 h-3 text-stone-400" />
-            </a>
-
-            <button
-              type="button"
-              onClick={() => {
-                const url = `${window.location.origin}/reservar/${currentOrg.slug}`;
-                navigator.clipboard.writeText(url);
-                setCopiedLink(true);
-                setTimeout(() => setCopiedLink(false), 2500);
-              }}
-              className="flex items-center gap-1 px-2.5 py-2 rounded-xl border border-[#E4DDD2] dark:border-[#352F2B] bg-white dark:bg-[#201D1B] hover:bg-[#FAF7F2] dark:hover:bg-[#282421] text-xs font-semibold text-stone-600 dark:text-stone-300 transition cursor-pointer"
-              title="Copiar link para enviar por WhatsApp o redes sociales"
-            >
-              {copiedLink ? (
-                <>
-                  <Check className="w-3.5 h-3.5 text-emerald-600" />
-                  <span className="text-[11px] text-emerald-600 font-bold">¡Copiado!</span>
-                </>
-              ) : (
-                <>
-                  <Copy className="w-3.5 h-3.5 text-stone-400" />
-                  <span className="text-[11px]">Copiar Link</span>
-                </>
-              )}
-            </button>
-          </div>
-
-          {/* New manual appointment */}
-          <button
-            onClick={() => setShowNewModal(true)}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#6B8F7D] hover:bg-[#587969] text-white font-semibold text-xs shadow-xs transition cursor-pointer"
-          >
-            <Plus className="w-4 h-4" />
-            <span>Nuevo Turno</span>
-          </button>
-        </div>
-      </div>
-
-      {actionMessage && (
-        <div
-          className={`p-4 rounded-xl text-xs flex items-center justify-between ${
-            actionMessage.type === 'success'
-              ? 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800'
-              : 'bg-red-50 dark:bg-red-950/50 text-red-800 dark:text-red-300 border border-red-200 dark:border-red-800'
-          }`}
-        >
-          <div className="flex items-center gap-2">
-            {actionMessage.type === 'success' ? <CheckCircle className="w-4 h-4" /> : <AlertCircle className="w-4 h-4" />}
-            <span>{actionMessage.text}</span>
-          </div>
-          <button onClick={() => setActionMessage(null)} className="font-bold underline">
-            Cerrar
-          </button>
-        </div>
-      )}
-
-      {/* Date Navigation, View Mode & Professional Filter */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white dark:bg-[#201D1B] p-4 rounded-2xl border border-[#E8E2D8] dark:border-[#2D2825] shadow-xs">
-        <div className="flex flex-wrap items-center gap-2">
-          {/* Toggle Vista Día / Todos los Turnos */}
-          <div className="flex items-center gap-1 bg-[#FAF7F2] dark:bg-[#1C1A19] p-1 rounded-xl border border-[#E8E2D8] dark:border-[#352F2B]">
+      {/* Unified Toolbar: Date, Filters & Actions in a Single Clear Layout */}
+      <div className="bg-white rounded-2xl border border-[#E8E2D8] p-4 shadow-xs space-y-3 sm:space-y-0 sm:flex sm:items-center sm:justify-between gap-4">
+        {/* Left: View Mode Toggle & Date Navigation */}
+        <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex items-center bg-[#FAF8F2] p-1 rounded-xl border border-[#E8E2D8] text-xs font-semibold">
             <button
               type="button"
               onClick={() => setViewMode('day')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer flex items-center gap-1.5 ${
+              className={`px-3 py-1.5 rounded-lg transition cursor-pointer flex items-center gap-1.5 ${
                 viewMode === 'day'
-                  ? 'bg-white dark:bg-[#282421] text-stone-900 dark:text-white shadow-2xs'
-                  : 'text-stone-500 hover:text-stone-900 dark:hover:text-stone-200'
+                  ? 'bg-white text-[#28634C] shadow-2xs font-bold'
+                  : 'text-[#5E7166] hover:text-[#24352C]'
               }`}
             >
               <CalendarIcon className="w-3.5 h-3.5" />
-              <span>Vista Día</span>
+              <span>Día</span>
             </button>
             <button
               type="button"
               onClick={() => setViewMode('list')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer flex items-center gap-1.5 ${
+              className={`px-3 py-1.5 rounded-lg transition cursor-pointer flex items-center gap-1.5 ${
                 viewMode === 'list'
-                  ? 'bg-white dark:bg-[#282421] text-stone-900 dark:text-white shadow-2xs'
-                  : 'text-stone-500 hover:text-stone-900 dark:hover:text-stone-200'
+                  ? 'bg-white text-[#28634C] shadow-2xs font-bold'
+                  : 'text-[#5E7166] hover:text-[#24352C]'
               }`}
             >
               <List className="w-3.5 h-3.5" />
-              <span>Todos los Turnos</span>
-              <span className="px-1.5 py-0.2 rounded-full bg-[#EBF2EE] dark:bg-[#203026] text-[#3B6652] dark:text-[#A1CEB5] text-[10px] font-black">
-                {appointments.filter((a) => a.organization_id === currentOrg.id && a.branch_id === currentBranch.id && a.status !== 'cancelled').length}
-              </span>
+              <span>Todos ({appointments.filter((a) => a.organization_id === currentOrg.id && a.branch_id === currentBranch.id && a.status !== 'cancelled').length})</span>
             </button>
           </div>
 
-          {/* Navigation Controls (Visible in Day View) */}
           {viewMode === 'day' && (
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-1">
               <button
+                type="button"
                 onClick={handlePrevDay}
-                className="p-1.5 rounded-xl border border-[#E8E2D8] dark:border-[#2D2825] hover:bg-[#F7F3EC] dark:hover:bg-[#282421] transition cursor-pointer"
+                className="p-1.5 rounded-xl border border-[#E8E2D8] hover:bg-[#FAF8F2] transition cursor-pointer text-[#24352C]"
                 title="Día anterior"
               >
-                <ChevronLeft className="w-4 h-4 text-stone-600 dark:text-stone-300" />
+                <ChevronLeft className="w-4 h-4" />
               </button>
               <button
+                type="button"
                 onClick={handleToday}
-                className="px-2.5 py-1.5 rounded-xl border border-[#E8E2D8] dark:border-[#2D2825] text-xs font-semibold hover:bg-[#F7F3EC] dark:hover:bg-[#282421] transition cursor-pointer"
+                className="px-2.5 py-1.5 rounded-xl border border-[#E8E2D8] text-xs font-semibold hover:bg-[#FAF8F2] transition cursor-pointer text-[#24352C]"
               >
                 Hoy
               </button>
               <button
+                type="button"
                 onClick={handleNextDay}
-                className="p-1.5 rounded-xl border border-[#E8E2D8] dark:border-[#2D2825] hover:bg-[#F7F3EC] dark:hover:bg-[#282421] transition cursor-pointer"
+                className="p-1.5 rounded-xl border border-[#E8E2D8] hover:bg-[#FAF8F2] transition cursor-pointer text-[#24352C]"
                 title="Día siguiente"
               >
-                <ChevronRight className="w-4 h-4 text-stone-600 dark:text-stone-300" />
+                <ChevronRight className="w-4 h-4" />
               </button>
 
               <input
@@ -368,28 +260,18 @@ export const CalendarPage: React.FC = () => {
                     setSelectedDate(new Date(y, m - 1, d, 12, 0, 0));
                   }
                 }}
-                className="text-xs bg-[#FAF7F2] dark:bg-[#282421] border border-[#E8E2D8] dark:border-[#352F2B] rounded-lg px-2 py-1 text-stone-700 dark:text-stone-200 cursor-pointer font-medium"
+                className="text-xs bg-[#FAF8F2] border border-[#E8E2D8] rounded-xl px-2.5 py-1.5 text-[#24352C] cursor-pointer font-medium ml-1"
               />
-
-              <div className="text-xs sm:text-sm font-semibold text-stone-800 dark:text-stone-100 hidden lg:block ml-1">
-                {selectedDate.toLocaleDateString('es-AR', {
-                  weekday: 'short',
-                  day: 'numeric',
-                  month: 'short',
-                  year: 'numeric',
-                })}
-              </div>
             </div>
           )}
         </div>
 
-        {/* Filter by Professional */}
-        <div className="flex items-center gap-2">
-          <Filter className="w-4 h-4 text-stone-400" />
+        {/* Right: Professional Filter + Link + New Appointment */}
+        <div className="flex items-center gap-2 flex-wrap">
           <select
             value={selectedProfFilter}
             onChange={(e) => setSelectedProfFilter(e.target.value)}
-            className="bg-[#FAF7F2] dark:bg-[#282421] border border-[#E4DDD2] dark:border-[#352F2B] text-xs font-medium rounded-xl px-3 py-2 text-stone-700 dark:text-stone-200 focus:outline-[#5E836F]"
+            className="bg-[#FAF8F2] border border-[#E8E2D8] text-xs font-medium rounded-xl px-3 py-2 text-[#24352C] focus:outline-[#28634C]"
           >
             <option value="all">Todos los profesionales ({branchProfessionals.length})</option>
             {branchProfessionals.map((p) => (
@@ -398,22 +280,85 @@ export const CalendarPage: React.FC = () => {
               </option>
             ))}
           </select>
+
+          {/* Quick Copy Turnero */}
+          <button
+            type="button"
+            onClick={() => {
+              const url = `${window.location.origin}/reservar/${currentOrg.slug}`;
+              navigator.clipboard.writeText(url);
+              setCopiedLink(true);
+              setTimeout(() => setCopiedLink(false), 2500);
+            }}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-[#E8E2D8] bg-[#FAF8F2] hover:bg-[#F2ECE4] text-xs font-semibold text-[#24352C] transition cursor-pointer"
+            title="Copiar link para enviar a clientes"
+          >
+            {copiedLink ? (
+              <>
+                <Check className="w-3.5 h-3.5 text-emerald-600" />
+                <span className="text-emerald-700 font-bold">¡Copiado!</span>
+              </>
+            ) : (
+              <>
+                <Copy className="w-3.5 h-3.5 text-[#5E7166]" />
+                <span>Link Turnero</span>
+              </>
+            )}
+          </button>
+
+          <a
+            href={`/reservar/${currentOrg.slug}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="p-2 rounded-xl border border-[#E8E2D8] bg-[#FAF8F2] hover:bg-[#F2ECE4] text-[#5E7166] hover:text-[#28634C] transition"
+            title="Abrir turnero web público"
+          >
+            <ExternalLink className="w-3.5 h-3.5" />
+          </a>
+
+          {/* Primary Action Button */}
+          <button
+            type="button"
+            onClick={() => setShowNewModal(true)}
+            className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#28634C] hover:bg-[#1E4E3B] text-white font-semibold text-xs shadow-xs transition cursor-pointer"
+          >
+            <Plus className="w-4 h-4 text-[#E8CDA8]" />
+            <span>Nuevo Turno</span>
+          </button>
         </div>
       </div>
 
-      {/* Banner de turnos en otras fechas */}
-      {otherDateAppointments.length > 0 && viewMode === 'day' && (
-        <div className="p-3.5 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900 rounded-2xl text-xs text-amber-900 dark:text-amber-200 flex flex-col sm:flex-row sm:items-center justify-between gap-2 shadow-2xs">
+      {actionMessage && (
+        <div
+          className={`p-3.5 rounded-2xl text-xs flex items-center justify-between border ${
+            actionMessage.type === 'success'
+              ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+              : 'bg-red-50 text-red-800 border-red-200'
+          }`}
+        >
           <div className="flex items-center gap-2">
-            <span className="w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse shrink-0" />
+            {actionMessage.type === 'success' ? <CheckCircle className="w-4 h-4 text-emerald-600" /> : <AlertCircle className="w-4 h-4 text-red-600" />}
+            <span>{actionMessage.text}</span>
+          </div>
+          <button onClick={() => setActionMessage(null)} className="font-bold underline text-xs cursor-pointer">
+            Cerrar
+          </button>
+        </div>
+      )}
+
+      {/* Gentle notice for appointments on other dates */}
+      {otherDateAppointments.length > 0 && viewMode === 'day' && (
+        <div className="p-3 bg-[#F7EFE4] border border-[#E8CDA8]/60 rounded-2xl text-xs text-[#24352C] flex items-center justify-between gap-2 shadow-2xs">
+          <div className="flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-[#28634C] shrink-0" />
             <span>
-              Hay <strong>{otherDateAppointments.length} {otherDateAppointments.length === 1 ? 'turno agendado' : 'turnos agendados'}</strong> para otras fechas en esta sucursal.
+              Tenés <strong>{otherDateAppointments.length} {otherDateAppointments.length === 1 ? 'turno agendado' : 'turnos agendados'}</strong> para otros días.
             </span>
           </div>
           <button
             type="button"
             onClick={() => setViewMode('list')}
-            className="text-xs font-bold text-[#5E836F] dark:text-[#8CB5A0] underline hover:opacity-80 cursor-pointer self-start sm:self-auto"
+            className="text-xs font-bold text-[#28634C] underline hover:opacity-80 cursor-pointer"
           >
             Ver todos los turnos →
           </button>
@@ -482,68 +427,68 @@ export const CalendarPage: React.FC = () => {
                         return (
                           <div
                             key={appt.id}
-                            className={`p-3.5 rounded-2xl border bg-white dark:bg-[#201D1B] shadow-xs transition hover:shadow-sm space-y-2.5 ${
+                            className={`p-4 rounded-2xl border bg-white shadow-xs transition hover:shadow-sm space-y-3 ${
                               appt.status === 'in_progress'
-                                ? 'border-[#C4848F] ring-2 ring-[#C4848F]/20'
+                                ? 'border-[#28634C] ring-2 ring-[#28634C]/20'
                                 : appt.status === 'cancelled'
-                                ? 'border-[#E8E2D8] dark:border-[#2D2825] opacity-60'
-                                : 'border-[#E8E2D8] dark:border-[#2D2825]'
+                                ? 'border-[#E8E2D8] opacity-60'
+                                : 'border-[#E8E2D8]'
                             }`}
                           >
                             <div className="flex items-center justify-between">
-                              <span className="font-bold text-xs text-stone-900 dark:text-white flex items-center gap-1.5 tabular-nums">
-                                <Clock className="w-3.5 h-3.5 text-[#6B8F7D]" />
+                              <span className="font-bold text-xs text-[#24352C] flex items-center gap-1.5 tabular-nums">
+                                <Clock className="w-3.5 h-3.5 text-[#28634C]" />
                                 {startTime} - {endTime} hs
                               </span>
                               {renderStatusBadge(appt.status)}
                             </div>
 
                             <div>
-                              <div className="font-semibold text-xs text-stone-800 dark:text-stone-100 flex items-center justify-between">
-                                <span>{cust?.full_name || 'Cliente'}</span>
-                                <span className="text-[11px] font-bold text-stone-700 dark:text-stone-300 tabular-nums">
+                              <div className="font-semibold text-xs text-[#24352C] flex items-center justify-between">
+                                <span className="font-bold">{cust?.full_name || 'Cliente'}</span>
+                                <span className="text-xs font-bold text-[#28634C] tabular-nums">
                                   ${appt.total_amount.toLocaleString()}
                                 </span>
                               </div>
-                              <p className="text-[11px] text-stone-400 mt-0.5">
+                              <p className="text-[11px] text-[#5E7166] mt-0.5">
                                 {cust?.phone}
                               </p>
                               {appt.customer_notes && (
-                                <p className="text-[10px] text-[#8C5D45] dark:text-[#E2A688] bg-[#FAF2ED] dark:bg-[#2D211C] p-2 rounded-lg mt-1 italic border border-[#ECD9CE] dark:border-[#422F26]">
+                                <p className="text-[11px] text-[#24352C] bg-[#F7EFE4] p-2 rounded-xl mt-1.5 italic border border-[#E8CDA8]/60">
                                   "{appt.customer_notes}"
                                 </p>
                               )}
                             </div>
 
                             {/* Action progression bar */}
-                            <div className="pt-2 border-t border-[#EFE9DF] dark:border-[#2D2825] flex items-center justify-between gap-1.5">
+                            <div className="pt-2 border-t border-[#E8E2D8] flex items-center justify-between gap-1.5">
                               {appt.status === 'confirmed' && (
                                 <button
                                   onClick={() => updateAppointmentStatus(appt.id, 'checked_in')}
-                                  className="flex-1 py-1.5 px-2 rounded-lg bg-[#EBF2EE] dark:bg-[#25382D] text-[#335946] dark:text-[#A1CEB5] hover:bg-[#DFECE3] text-[10px] font-semibold transition flex items-center justify-center gap-1 cursor-pointer"
+                                  className="flex-1 py-1.5 px-2 rounded-xl bg-[#F7EFE4] text-[#28634C] hover:bg-[#E8CDA8]/40 border border-[#E8CDA8]/60 text-[10px] font-bold transition flex items-center justify-center gap-1 cursor-pointer"
                                 >
                                   <UserCheck className="w-3 h-3" />
-                                  <span>Check-in</span>
+                                  <span>En Sala</span>
                                 </button>
                               )}
 
                               {appt.status === 'checked_in' && (
                                 <button
                                   onClick={() => updateAppointmentStatus(appt.id, 'in_progress')}
-                                  className="flex-1 py-1.5 px-2 rounded-lg bg-[#F4EFF8] dark:bg-[#2E203A] text-[#553E6E] dark:text-[#CBB5E8] hover:bg-[#E8DEF2] text-[10px] font-semibold transition flex items-center justify-center gap-1 cursor-pointer"
+                                  className="flex-1 py-1.5 px-2 rounded-xl bg-amber-50 text-amber-900 hover:bg-amber-100 border border-amber-200 text-[10px] font-bold transition flex items-center justify-center gap-1 cursor-pointer"
                                 >
                                   <PlayCircle className="w-3 h-3" />
-                                  <span>Iniciar</span>
+                                  <span>Atender</span>
                                 </button>
                               )}
 
                               {appt.status === 'in_progress' && (
                                 <button
                                   onClick={() => updateAppointmentStatus(appt.id, 'completed')}
-                                  className="flex-1 py-1.5 px-2 rounded-lg bg-[#FAF0ED] dark:bg-[#341F1A] text-[#9A4B3D] dark:text-[#EBA196] hover:bg-[#F2DFD9] text-[10px] font-semibold transition flex items-center justify-center gap-1 cursor-pointer"
+                                  className="flex-1 py-1.5 px-2 rounded-xl bg-[#28634C] text-white hover:bg-[#1E4E3B] text-[10px] font-bold transition flex items-center justify-center gap-1 cursor-pointer shadow-xs"
                                 >
-                                  <CheckCircle className="w-3 h-3" />
-                                  <span>Finalizar</span>
+                                  <CheckCircle className="w-3 h-3 text-[#E8CDA8]" />
+                                  <span>Cobrar / Finalizar</span>
                                 </button>
                               )}
 
@@ -555,7 +500,7 @@ export const CalendarPage: React.FC = () => {
                                     setRescheduleDateStr(appt.starts_at.split('T')[0]);
                                     setShowRescheduleModal(true);
                                   }}
-                                  className="py-1.5 px-2.5 rounded-lg border border-[#E4DDD2] dark:border-[#352F2B] text-stone-600 dark:text-stone-300 hover:bg-[#F7F3EC] dark:hover:bg-[#282421] text-[10px] font-medium transition cursor-pointer"
+                                  className="py-1.5 px-2.5 rounded-xl border border-[#E8E2D8] text-[#5E7166] hover:text-[#24352C] hover:bg-[#FAF8F2] text-[10px] font-medium transition cursor-pointer"
                                 >
                                   Reprogramar
                                 </button>
@@ -569,7 +514,7 @@ export const CalendarPage: React.FC = () => {
                                       cancelAppointment(appt.id, 'Cancelado desde panel de agenda');
                                     }
                                   }}
-                                  className="p-1 rounded-lg text-stone-400 hover:text-[#9A4B3D] hover:bg-[#FDF2F0] dark:hover:bg-[#341F1A] transition"
+                                  className="p-1.5 rounded-xl text-stone-400 hover:text-red-600 hover:bg-red-50 transition cursor-pointer"
                                   title="Cancelar turno"
                                 >
                                   <XCircle className="w-3.5 h-3.5" />
@@ -769,13 +714,13 @@ export const CalendarPage: React.FC = () => {
                     required
                     value={newTimeStr}
                     onChange={(e) => setNewTimeStr(e.target.value)}
-                    className="w-full bg-[#FAF7F2] dark:bg-[#1A1817] border border-[#E4DDD2] dark:border-[#352F2B] rounded-xl px-3 py-2 text-xs text-stone-900 dark:text-white focus:outline-[#5E836F]"
+                    className="w-full bg-[#FAF8F2] border border-[#E8E2D8] rounded-xl px-3 py-2 text-xs text-[#24352C] focus:outline-[#28634C]"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-stone-700 dark:text-stone-300 mb-1">
+                <label className="block text-xs font-semibold text-[#24352C] mb-1">
                   Notas Internas
                 </label>
                 <textarea
@@ -783,21 +728,21 @@ export const CalendarPage: React.FC = () => {
                   value={newNotes}
                   onChange={(e) => setNewNotes(e.target.value)}
                   placeholder="Detalles sobre el turno o preferencias del cliente..."
-                  className="w-full bg-[#FAF7F2] dark:bg-[#1A1817] border border-[#E4DDD2] dark:border-[#352F2B] rounded-xl px-3 py-2 text-xs text-stone-900 dark:text-white focus:outline-[#5E836F]"
+                  className="w-full bg-[#FAF8F2] border border-[#E8E2D8] rounded-xl px-3 py-2 text-xs text-[#24352C] focus:outline-[#28634C]"
                 />
               </div>
 
-              <div className="flex justify-end gap-2 pt-2 border-t border-[#E8E2D8] dark:border-[#2D2825]">
+              <div className="flex justify-end gap-2 pt-2 border-t border-[#E8E2D8]">
                 <button
                   type="button"
                   onClick={() => setShowNewModal(false)}
-                  className="px-4 py-2 rounded-xl border border-[#E4DDD2] dark:border-[#352F2B] text-xs font-semibold text-stone-600 dark:text-stone-300 hover:bg-[#F7F3EC] dark:hover:bg-[#282421] transition"
+                  className="px-4 py-2 rounded-xl border border-[#E8E2D8] text-xs font-semibold text-[#5E7166] hover:bg-[#FAF8F2] transition cursor-pointer"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 rounded-xl bg-[#5E836F] hover:bg-[#4E705D] text-white font-semibold text-xs shadow-xs transition"
+                  className="px-5 py-2 rounded-xl bg-[#28634C] hover:bg-[#1E4E3B] text-white font-semibold text-xs shadow-xs transition cursor-pointer"
                 >
                   Guardar Turno
                 </button>
@@ -809,55 +754,55 @@ export const CalendarPage: React.FC = () => {
 
       {/* MODAL: RESCHEDULING */}
       {showRescheduleModal && activeAppointment && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4">
-          <div className="w-full max-w-md bg-white dark:bg-[#201D1B] rounded-3xl border border-[#E8E2D8] dark:border-[#2D2825] p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between pb-3 border-b border-[#E8E2D8] dark:border-[#2D2825]">
-              <h3 className="font-bold text-base text-stone-900 dark:text-white">Reprogramar Turno</h3>
-              <button onClick={() => setShowRescheduleModal(false)} className="text-stone-400 hover:text-stone-600 dark:hover:text-stone-200">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs p-4">
+          <div className="w-full max-w-md bg-white rounded-3xl border border-[#E8E2D8] p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between pb-3 border-b border-[#E8E2D8]">
+              <h3 className="font-bold text-base text-[#24352C]">Reprogramar Turno</h3>
+              <button onClick={() => setShowRescheduleModal(false)} className="text-stone-400 hover:text-stone-600 cursor-pointer">
                 <XCircle className="w-5 h-5" />
               </button>
             </div>
 
             <div className="space-y-3 text-xs">
-              <p className="text-stone-600 dark:text-stone-300">
-                Seleccioná el nuevo día y horario para reprogramar el turno de forma atómica:
+              <p className="text-[#5E7166]">
+                Seleccioná el nuevo día y horario para reprogramar el turno de forma inmediata:
               </p>
 
               <div>
-                <label className="block text-xs font-semibold text-stone-700 dark:text-stone-300 mb-1">
+                <label className="block text-xs font-semibold text-[#24352C] mb-1">
                   Nueva Fecha
                 </label>
                 <input
                   type="date"
                   value={rescheduleDateStr}
                   onChange={(e) => setRescheduleDateStr(e.target.value)}
-                  className="w-full bg-[#FAF7F2] dark:bg-[#1A1817] border border-[#E4DDD2] dark:border-[#352F2B] rounded-xl px-3 py-2 text-xs text-stone-900 dark:text-white focus:outline-[#5E836F]"
+                  className="w-full bg-[#FAF8F2] border border-[#E8E2D8] rounded-xl px-3 py-2 text-xs text-[#24352C] focus:outline-[#28634C]"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-stone-700 dark:text-stone-300 mb-1">
+                <label className="block text-xs font-semibold text-[#24352C] mb-1">
                   Nuevo Horario
                 </label>
                 <input
                   type="time"
                   value={rescheduleTimeStr}
                   onChange={(e) => setRescheduleTimeStr(e.target.value)}
-                  className="w-full bg-[#FAF7F2] dark:bg-[#1A1817] border border-[#E4DDD2] dark:border-[#352F2B] rounded-xl px-3 py-2 text-xs text-stone-900 dark:text-white focus:outline-[#5E836F]"
+                  className="w-full bg-[#FAF8F2] border border-[#E8E2D8] rounded-xl px-3 py-2 text-xs text-[#24352C] focus:outline-[#28634C]"
                 />
               </div>
             </div>
 
-            <div className="flex justify-end gap-2 pt-2 border-t border-[#E8E2D8] dark:border-[#2D2825]">
+            <div className="flex justify-end gap-2 pt-2 border-t border-[#E8E2D8]">
               <button
                 onClick={() => setShowRescheduleModal(false)}
-                className="px-4 py-2 rounded-xl border border-[#E4DDD2] dark:border-[#352F2B] text-xs font-semibold text-stone-600 dark:text-stone-300 hover:bg-[#F7F3EC] dark:hover:bg-[#282421] transition"
+                className="px-4 py-2 rounded-xl border border-[#E8E2D8] text-xs font-semibold text-[#5E7166] hover:bg-[#FAF8F2] transition cursor-pointer"
               >
                 Cancelar
               </button>
               <button
                 onClick={handleConfirmReschedule}
-                className="px-5 py-2 rounded-xl bg-[#5E836F] hover:bg-[#4E705D] text-white font-semibold text-xs shadow-xs transition"
+                className="px-5 py-2 rounded-xl bg-[#28634C] hover:bg-[#1E4E3B] text-white font-semibold text-xs shadow-xs transition cursor-pointer"
               >
                 Confirmar Reprogramación
               </button>

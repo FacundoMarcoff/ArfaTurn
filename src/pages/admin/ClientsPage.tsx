@@ -101,25 +101,25 @@ export const ClientsPage: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white dark:bg-[#201D1B] p-5 rounded-2xl border border-[#E8E2D8] dark:border-[#2D2825] shadow-xs">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-[#E8E2D8] shadow-xs">
         <div>
-          <h1 className="text-xl sm:text-2xl font-bold text-stone-900 dark:text-white tracking-tight">Fichas de Clientes / CRM</h1>
-          <p className="text-xs text-stone-500 dark:text-stone-400 mt-1">
+          <h1 className="text-xl sm:text-2xl font-bold text-[#24352C] tracking-tight">Fichas de Clientes / CRM</h1>
+          <p className="text-xs text-[#5E7166] mt-1">
             Historial de visitas, notas operativas, saldo y segmentación aislada por comercio.
           </p>
         </div>
 
         <button
           onClick={() => setShowNewModal(true)}
-          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#6B8F7D] hover:bg-[#587969] text-white font-semibold text-xs shadow-xs transition cursor-pointer"
+          className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#28634C] hover:bg-[#1E4E3B] text-white font-semibold text-xs shadow-xs transition cursor-pointer"
         >
-          <Plus className="w-4 h-4" />
+          <Plus className="w-4 h-4 text-[#E8CDA8]" />
           <span>Nuevo Cliente</span>
         </button>
       </div>
 
       {actionAlert && (
-        <div className="p-4 rounded-xl bg-[#EBF2EE] dark:bg-[#23352B] border border-[#D5E3DB] dark:border-[#2E4738] text-[#2F4F3E] dark:text-[#A1CEB5] text-xs flex items-center justify-between">
+        <div className="p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs flex items-center justify-between">
           <span>{actionAlert}</span>
           <button onClick={() => setActionAlert(null)} className="font-bold underline cursor-pointer">
             Cerrar
@@ -128,23 +128,23 @@ export const ClientsPage: React.FC = () => {
       )}
 
       {/* Search & List */}
-      <div className="bg-white dark:bg-[#201D1B] rounded-2xl border border-[#E8E2D8] dark:border-[#2D2825] shadow-xs overflow-hidden">
-        <div className="p-4 border-b border-[#EFE9DF] dark:border-[#2D2825]">
+      <div className="bg-white rounded-2xl border border-[#E8E2D8] shadow-xs overflow-hidden">
+        <div className="p-4 border-b border-[#E8E2D8]">
           <div className="relative max-w-md">
-            <Search className="w-4 h-4 text-stone-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+            <Search className="w-4 h-4 text-[#5E7166] absolute left-3.5 top-1/2 -translate-y-1/2" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Buscar por nombre, teléfono, email o etiqueta..."
-              className="w-full pl-9 pr-4 py-2 bg-[#FAF7F2] dark:bg-[#262220] border border-[#E4DDD2] dark:border-[#352F2B] rounded-xl text-xs text-stone-900 dark:text-white focus:outline-[#6B8F7D]"
+              className="w-full pl-9 pr-4 py-2 bg-[#FAF8F2] border border-[#E8E2D8] rounded-xl text-xs text-[#24352C] focus:outline-[#28634C]"
             />
           </div>
         </div>
 
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
-            <thead className="bg-[#FAF7F2] dark:bg-[#282421] text-stone-500 font-semibold border-b border-[#E8E2D8] dark:border-[#2D2825]">
+            <thead className="bg-[#FAF8F2] text-[#5E7166] font-semibold border-b border-[#E8E2D8]">
               <tr>
                 <th className="px-4 py-3">Cliente</th>
                 <th className="px-4 py-3">Contacto</th>
@@ -154,10 +154,10 @@ export const ClientsPage: React.FC = () => {
                 <th className="px-4 py-3 text-right">Detalle</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-[#EFE9DF] dark:divide-[#2D2825]">
+            <tbody className="divide-y divide-[#E8E2D8]">
               {filteredCustomers.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="py-8 text-center text-stone-400">
+                  <td colSpan={6} className="py-8 text-center text-[#5E7166]">
                     No se encontraron clientes registrados en este comercio.
                   </td>
                 </tr>
@@ -165,33 +165,33 @@ export const ClientsPage: React.FC = () => {
                 filteredCustomers.map((cust) => (
                   <tr
                     key={cust.id}
-                    className="hover:bg-[#FAF7F2]/80 dark:hover:bg-[#252220] transition cursor-pointer"
+                    className="hover:bg-[#FAF8F2] transition cursor-pointer"
                     onClick={() => setSelectedCustomer(cust)}
                   >
                     <td className="px-4 py-3">
-                      <div className="font-semibold text-stone-900 dark:text-stone-100">{cust.full_name}</div>
-                      <div className="text-[10px] text-stone-400">Desde {new Date(cust.created_at).toLocaleDateString()}</div>
+                      <div className="font-bold text-[#24352C]">{cust.full_name}</div>
+                      <div className="text-[10px] text-[#5E7166]">Desde {new Date(cust.created_at).toLocaleDateString()}</div>
                     </td>
                     <td className="px-4 py-3">
-                      <div className="text-stone-800 dark:text-stone-200">{cust.phone}</div>
-                      {cust.email && <div className="text-[11px] text-stone-400">{cust.email}</div>}
+                      <div className="text-[#24352C]">{cust.phone}</div>
+                      {cust.email && <div className="text-[11px] text-[#5E7166]">{cust.email}</div>}
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex flex-wrap gap-1">
                         {cust.tags.map((t) => (
                           <span
                             key={t}
-                            className="px-2 py-0.5 rounded-md text-[10px] font-medium bg-[#F2ECE4] dark:bg-[#2E2926] text-stone-700 dark:text-stone-300"
+                            className="px-2 py-0.5 rounded-md text-[10px] font-medium bg-[#F7EFE4] text-[#28634C] border border-[#E8CDA8]/60"
                           >
                             {t}
                           </span>
                         ))}
                       </div>
                     </td>
-                    <td className="px-4 py-3 font-medium text-stone-800 dark:text-stone-200 tabular-nums">
+                    <td className="px-4 py-3 font-medium text-[#24352C] tabular-nums">
                       {cust.total_appointments} turnos
                     </td>
-                    <td className="px-4 py-3 font-bold text-[#4A725D] dark:text-[#A1CEB5] tabular-nums">
+                    <td className="px-4 py-3 font-bold text-[#28634C] tabular-nums">
                       ${cust.total_spent.toLocaleString()}
                     </td>
                     <td className="px-4 py-3 text-right">

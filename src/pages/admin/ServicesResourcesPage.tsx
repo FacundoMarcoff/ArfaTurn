@@ -73,35 +73,35 @@ export const ServicesResourcesPage: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white dark:bg-[#201D1B] p-5 rounded-2xl border border-[#E8E2D8] dark:border-[#2D2825] shadow-xs">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-[#E8E2D8] shadow-xs">
         <div>
-          <h1 className="text-xl sm:text-2xl font-bold text-stone-900 dark:text-white tracking-tight">
+          <h1 className="text-xl sm:text-2xl font-bold text-[#24352C] tracking-tight">
             Servicios y Recursos Físicos
           </h1>
-          <p className="text-xs text-stone-500 dark:text-stone-400 mt-1">
+          <p className="text-xs text-[#5E7166] mt-1">
             Configuración de duración, buffers de limpieza, señas online y asignación de salas o sillones.
           </p>
         </div>
 
         <div className="flex items-center gap-2">
           {/* Tab Selector */}
-          <div className="flex bg-[#FAF7F2] dark:bg-[#282421] p-1 rounded-xl text-xs font-semibold border border-[#E8E2D8] dark:border-[#352F2B]">
+          <div className="flex bg-[#FAF8F2] p-1 rounded-xl text-xs font-semibold border border-[#E8E2D8]">
             <button
               onClick={() => setActiveTab('services')}
-              className={`px-3 py-1.5 rounded-lg transition ${
+              className={`px-3 py-1.5 rounded-lg transition cursor-pointer ${
                 activeTab === 'services'
-                  ? 'bg-white dark:bg-[#201D1B] text-[#335946] dark:text-[#A1CEB5] shadow-xs font-bold'
-                  : 'text-stone-600 dark:text-stone-400 hover:text-stone-900'
+                  ? 'bg-[#28634C] text-white shadow-xs font-bold'
+                  : 'text-[#5E7166] hover:text-[#24352C]'
               }`}
             >
               Servicios ({orgServices.length})
             </button>
             <button
               onClick={() => setActiveTab('resources')}
-              className={`px-3 py-1.5 rounded-lg transition ${
+              className={`px-3 py-1.5 rounded-lg transition cursor-pointer ${
                 activeTab === 'resources'
-                  ? 'bg-white dark:bg-[#201D1B] text-[#335946] dark:text-[#A1CEB5] shadow-xs font-bold'
-                  : 'text-stone-600 dark:text-stone-400 hover:text-stone-900'
+                  ? 'bg-[#28634C] text-white shadow-xs font-bold'
+                  : 'text-[#5E7166] hover:text-[#24352C]'
               }`}
             >
               Recursos / Sillones ({branchResources.length})
@@ -111,9 +111,9 @@ export const ServicesResourcesPage: React.FC = () => {
           {activeTab === 'services' && (
             <button
               onClick={() => setShowNewServiceModal(true)}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-[#5E836F] hover:bg-[#4E705D] text-white font-semibold text-xs shadow-xs transition"
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#28634C] hover:bg-[#1E4E3B] text-white font-semibold text-xs shadow-xs transition cursor-pointer"
             >
-              <Plus className="w-4 h-4" />
+              <Plus className="w-4 h-4 text-[#E8CDA8]" />
               <span>Nuevo Servicio</span>
             </button>
           )}
@@ -126,49 +126,49 @@ export const ServicesResourcesPage: React.FC = () => {
           {orgServices.map((service) => (
             <div
               key={service.id}
-              className="bg-white dark:bg-[#201D1B] rounded-2xl border border-[#E8E2D8] dark:border-[#2D2825] p-5 shadow-xs flex flex-col justify-between space-y-4 hover:border-[#6B8F7D]/50 transition"
+              className="bg-white rounded-2xl border border-[#E8E2D8] p-5 shadow-xs flex flex-col justify-between space-y-4 hover:border-[#28634C]/50 transition"
             >
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-semibold uppercase tracking-wider text-[#553E6E] dark:text-[#C7B2E2] bg-[#F4EFF8] dark:bg-[#2B2035] px-2.5 py-0.5 rounded-lg border border-[#E0D5EB] dark:border-[#423252]">
+                  <span className="text-[10px] font-semibold uppercase tracking-wider text-[#28634C] bg-[#F7EFE4] px-2.5 py-0.5 rounded-lg border border-[#E8CDA8]/60">
                     {service.category}
                   </span>
-                  <div className="text-lg font-bold text-stone-900 dark:text-white tabular-nums">
+                  <div className="text-lg font-bold text-[#28634C] tabular-nums">
                     ${service.price.toLocaleString()}
                   </div>
                 </div>
 
-                <h3 className="font-bold text-sm text-stone-900 dark:text-white leading-snug">
+                <h3 className="font-bold text-sm text-[#24352C] leading-snug">
                   {service.name}
                 </h3>
 
-                <p className="text-xs text-stone-500 dark:text-stone-400 leading-relaxed line-clamp-2">
+                <p className="text-xs text-[#5E7166] leading-relaxed line-clamp-2">
                   {service.description || 'Sin descripción detallada.'}
                 </p>
 
                 {/* Duration & Buffers */}
-                <div className="pt-2 flex items-center gap-3 text-xs text-stone-600 dark:text-stone-300">
-                  <span className="flex items-center gap-1 font-semibold">
-                    <Clock className="w-3.5 h-3.5 text-[#5E836F]" />
+                <div className="pt-2 flex items-center gap-3 text-xs text-[#5E7166]">
+                  <span className="flex items-center gap-1 font-semibold text-[#24352C]">
+                    <Clock className="w-3.5 h-3.5 text-[#28634C]" />
                     <span className="tabular-nums">{service.duration_minutes} min</span>
                   </span>
                   {(service.prep_buffer_minutes > 0 || service.clean_buffer_minutes > 0) && (
-                    <span className="text-[10px] text-stone-400">
+                    <span className="text-[10px] text-[#5E7166]">
                       +{service.prep_buffer_minutes}m prep / +{service.clean_buffer_minutes}m limpieza
                     </span>
                   )}
                 </div>
 
                 {service.deposit_amount > 0 && (
-                  <div className="text-[11px] font-semibold text-[#8C6B32] dark:text-[#E8C78A] bg-[#FEF8ED] dark:bg-[#332A1C] p-2 rounded-xl border border-[#F3E5CB] dark:border-[#4D3F28]">
+                  <div className="text-[11px] font-semibold text-[#28634C] bg-[#F7EFE4] p-2 rounded-xl border border-[#E8CDA8]/60">
                     Seña requerida: ${service.deposit_amount.toLocaleString()}
                   </div>
                 )}
               </div>
 
-              <div className="pt-3 border-t border-[#E8E2D8] dark:border-[#2D2825] flex items-center justify-between text-xs text-stone-500">
+              <div className="pt-3 border-t border-[#E8E2D8] flex items-center justify-between text-xs text-[#5E7166]">
                 <span>{service.is_public ? 'Publicado online' : 'Oculto'}</span>
-                <span className="font-semibold text-[#5E836F] dark:text-[#A1CEB5]">IVA {service.tax_rate_pct}%</span>
+                <span className="font-semibold text-[#28634C]">IVA {service.tax_rate_pct}%</span>
               </div>
             </div>
           ))}
@@ -180,23 +180,23 @@ export const ServicesResourcesPage: React.FC = () => {
             {branchResources.map((res) => (
               <div
                 key={res.id}
-                className="bg-white dark:bg-[#201D1B] rounded-2xl border border-[#E8E2D8] dark:border-[#2D2825] p-5 shadow-xs space-y-3"
+                className="bg-white rounded-2xl border border-[#E8E2D8] p-5 shadow-xs space-y-3"
               >
                 <div className="flex items-center justify-between">
-                  <div className="w-9 h-9 rounded-xl bg-[#F4EFF8] dark:bg-[#2B2035] text-[#553E6E] dark:text-[#C7B2E2] flex items-center justify-center font-bold">
+                  <div className="w-9 h-9 rounded-xl bg-[#F7EFE4] text-[#28634C] flex items-center justify-center font-bold border border-[#E8CDA8]/60">
                     <Box className="w-5 h-5" />
                   </div>
-                  <span className="text-xs font-semibold px-2.5 py-0.5 rounded-lg bg-[#EBF2EE] dark:bg-[#203026] text-[#2F4F3E] dark:text-[#A1CEB5] border border-[#D5E3DB] dark:border-[#2E4738]">
+                  <span className="text-xs font-semibold px-2.5 py-0.5 rounded-lg bg-[#F7EFE4] text-[#28634C] border border-[#E8CDA8]/60">
                     Capacidad: {res.capacity}
                   </span>
                 </div>
 
                 <div>
-                  <h3 className="font-bold text-sm text-stone-900 dark:text-white">{res.name}</h3>
-                  <p className="text-xs text-stone-400 capitalize mt-0.5">Tipo: {res.resource_type}</p>
+                  <h3 className="font-bold text-sm text-[#24352C]">{res.name}</h3>
+                  <p className="text-xs text-[#5E7166] capitalize mt-0.5">Tipo: {res.resource_type}</p>
                 </div>
 
-                <div className="text-[11px] text-stone-500 border-t border-[#E8E2D8] dark:border-[#2D2825] pt-2">
+                <div className="text-[11px] text-[#5E7166] border-t border-[#E8E2D8] pt-2">
                   Asignado a: {currentBranch.name}
                 </div>
               </div>
@@ -207,18 +207,18 @@ export const ServicesResourcesPage: React.FC = () => {
 
       {/* CREATE SERVICE MODAL */}
       {showNewServiceModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4">
-          <div className="w-full max-w-lg bg-white dark:bg-[#201D1B] rounded-3xl border border-[#E8E2D8] dark:border-[#2D2825] p-6 shadow-2xl space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-[#E8E2D8] dark:border-[#2D2825]">
-              <h3 className="font-bold text-base text-stone-900 dark:text-white">Crear Nuevo Servicio</h3>
-              <button onClick={() => setShowNewServiceModal(false)} className="text-stone-400 hover:text-stone-600 dark:hover:text-stone-200">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs p-4">
+          <div className="w-full max-w-lg bg-white rounded-3xl border border-[#E8E2D8] p-6 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-[#E8E2D8]">
+              <h3 className="font-bold text-base text-[#24352C]">Crear Nuevo Servicio</h3>
+              <button onClick={() => setShowNewServiceModal(false)} className="text-stone-400 hover:text-stone-600 cursor-pointer">
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             <form onSubmit={handleCreateService} className="space-y-3">
               <div>
-                <label className="block text-xs font-semibold text-stone-700 dark:text-stone-300 mb-1">
+                <label className="block text-xs font-semibold text-[#24352C] mb-1">
                   Nombre del Servicio *
                 </label>
                 <input
@@ -227,13 +227,13 @@ export const ServicesResourcesPage: React.FC = () => {
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="Ej. Corte y Peinado Premium"
-                  className="w-full bg-[#FAF7F2] dark:bg-[#1A1817] border border-[#E4DDD2] dark:border-[#352F2B] rounded-xl px-3 py-2 text-xs text-stone-900 dark:text-white focus:outline-[#5E836F]"
+                  className="w-full bg-[#FAF8F2] border border-[#E8E2D8] rounded-xl px-3 py-2 text-xs text-[#24352C] focus:outline-[#28634C]"
                 />
               </div>
 
               <div className="grid gap-3 sm:grid-cols-2">
                 <div>
-                  <label className="block text-xs font-semibold text-stone-700 dark:text-stone-300 mb-1">
+                  <label className="block text-xs font-semibold text-[#24352C] mb-1">
                     Categoría
                   </label>
                   <input
@@ -241,12 +241,12 @@ export const ServicesResourcesPage: React.FC = () => {
                     value={category}
                     onChange={(e) => setCategory(e.target.value)}
                     placeholder="Ej. Peluquería, Barba, Faciales..."
-                    className="w-full bg-[#FAF7F2] dark:bg-[#1A1817] border border-[#E4DDD2] dark:border-[#352F2B] rounded-xl px-3 py-2 text-xs text-stone-900 dark:text-white focus:outline-[#5E836F]"
+                    className="w-full bg-[#FAF8F2] border border-[#E8E2D8] rounded-xl px-3 py-2 text-xs text-[#24352C] focus:outline-[#28634C]"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-stone-700 dark:text-stone-300 mb-1">
+                  <label className="block text-xs font-semibold text-[#24352C] mb-1">
                     Precio ($) *
                   </label>
                   <input
@@ -255,14 +255,14 @@ export const ServicesResourcesPage: React.FC = () => {
                     min={0}
                     value={price}
                     onChange={(e) => setPrice(Number(e.target.value))}
-                    className="w-full bg-[#FAF7F2] dark:bg-[#1A1817] border border-[#E4DDD2] dark:border-[#352F2B] rounded-xl px-3 py-2 text-xs text-stone-900 dark:text-white focus:outline-[#5E836F]"
+                    className="w-full bg-[#FAF8F2] border border-[#E8E2D8] rounded-xl px-3 py-2 text-xs text-[#24352C] focus:outline-[#28634C]"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-3 gap-2">
                 <div>
-                  <label className="block text-[11px] font-semibold text-stone-700 dark:text-stone-300 mb-1">
+                  <label className="block text-[11px] font-semibold text-[#24352C] mb-1">
                     Duración (min) *
                   </label>
                   <input
@@ -271,12 +271,12 @@ export const ServicesResourcesPage: React.FC = () => {
                     step={5}
                     value={duration}
                     onChange={(e) => setDuration(Number(e.target.value))}
-                    className="w-full bg-[#FAF7F2] dark:bg-[#1A1817] border border-[#E4DDD2] dark:border-[#352F2B] rounded-xl px-2 py-2 text-xs text-stone-900 dark:text-white focus:outline-[#5E836F]"
+                    className="w-full bg-[#FAF8F2] border border-[#E8E2D8] rounded-xl px-2 py-2 text-xs text-[#24352C] focus:outline-[#28634C]"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-[11px] font-semibold text-stone-700 dark:text-stone-300 mb-1">
+                  <label className="block text-[11px] font-semibold text-[#24352C] mb-1">
                     Buffer Preparación
                   </label>
                   <input
@@ -285,12 +285,12 @@ export const ServicesResourcesPage: React.FC = () => {
                     step={5}
                     value={prepBuffer}
                     onChange={(e) => setPrepBuffer(Number(e.target.value))}
-                    className="w-full bg-[#FAF7F2] dark:bg-[#1A1817] border border-[#E4DDD2] dark:border-[#352F2B] rounded-xl px-2 py-2 text-xs text-stone-900 dark:text-white focus:outline-[#5E836F]"
+                    className="w-full bg-[#FAF8F2] border border-[#E8E2D8] rounded-xl px-2 py-2 text-xs text-[#24352C] focus:outline-[#28634C]"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-[11px] font-semibold text-stone-700 dark:text-stone-300 mb-1">
+                  <label className="block text-[11px] font-semibold text-[#24352C] mb-1">
                     Buffer Limpieza
                   </label>
                   <input
@@ -299,13 +299,13 @@ export const ServicesResourcesPage: React.FC = () => {
                     step={5}
                     value={cleanBuffer}
                     onChange={(e) => setCleanBuffer(Number(e.target.value))}
-                    className="w-full bg-[#FAF7F2] dark:bg-[#1A1817] border border-[#E4DDD2] dark:border-[#352F2B] rounded-xl px-2 py-2 text-xs text-stone-900 dark:text-white focus:outline-[#5E836F]"
+                    className="w-full bg-[#FAF8F2] border border-[#E8E2D8] rounded-xl px-2 py-2 text-xs text-[#24352C] focus:outline-[#28634C]"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-stone-700 dark:text-stone-300 mb-1">
+                <label className="block text-xs font-semibold text-[#24352C] mb-1">
                   Monto de Seña requerida ($) (0 si no requiere seña)
                 </label>
                 <input
@@ -313,12 +313,12 @@ export const ServicesResourcesPage: React.FC = () => {
                   min={0}
                   value={deposit}
                   onChange={(e) => setDeposit(Number(e.target.value))}
-                  className="w-full bg-[#FAF7F2] dark:bg-[#1A1817] border border-[#E4DDD2] dark:border-[#352F2B] rounded-xl px-3 py-2 text-xs text-stone-900 dark:text-white focus:outline-[#5E836F]"
+                  className="w-full bg-[#FAF8F2] border border-[#E8E2D8] rounded-xl px-3 py-2 text-xs text-[#24352C] focus:outline-[#28634C]"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-stone-700 dark:text-stone-300 mb-1">
+                <label className="block text-xs font-semibold text-[#24352C] mb-1">
                   Descripción pública para clientes
                 </label>
                 <textarea
@@ -326,21 +326,21 @@ export const ServicesResourcesPage: React.FC = () => {
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   placeholder="Detalles que verá el cliente al elegir el servicio..."
-                  className="w-full bg-[#FAF7F2] dark:bg-[#1A1817] border border-[#E4DDD2] dark:border-[#352F2B] rounded-xl px-3 py-2 text-xs text-stone-900 dark:text-white focus:outline-[#5E836F]"
+                  className="w-full bg-[#FAF8F2] border border-[#E8E2D8] rounded-xl px-3 py-2 text-xs text-[#24352C] focus:outline-[#28634C]"
                 />
               </div>
 
-              <div className="flex justify-end gap-2 pt-2 border-t border-[#E8E2D8] dark:border-[#2D2825]">
+              <div className="flex justify-end gap-2 pt-2 border-t border-[#E8E2D8]">
                 <button
                   type="button"
                   onClick={() => setShowNewServiceModal(false)}
-                  className="px-4 py-2 rounded-xl border border-[#E4DDD2] dark:border-[#352F2B] text-xs font-semibold text-stone-600 dark:text-stone-300 hover:bg-[#F7F3EC] dark:hover:bg-[#282421] transition"
+                  className="px-4 py-2 rounded-xl border border-[#E8E2D8] text-xs font-semibold text-[#5E7166] hover:bg-[#FAF8F2] transition cursor-pointer"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 rounded-xl bg-[#5E836F] hover:bg-[#4E705D] text-white font-semibold text-xs shadow-xs transition"
+                  className="px-5 py-2.5 rounded-xl bg-[#28634C] hover:bg-[#1E4E3B] text-white font-semibold text-xs shadow-xs transition cursor-pointer"
                 >
                   Crear Servicio
                 </button>

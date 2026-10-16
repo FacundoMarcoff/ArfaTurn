@@ -1,8 +1,29 @@
 @import "tailwindcss";
 
+@theme {
+  --color-brand-forest: #28634C;
+  --color-brand-forest-dark: #24352C;
+  --color-brand-forest-hover: #1E4E3B;
+  --color-brand-sand: #E8CDA8;
+  --color-brand-sand-light: #F7EFE4;
+  --color-brand-canvas: #FAF8F2;
+  --color-brand-card: #FFFFFF;
+  --color-brand-border: #E8E2D8;
+  --color-brand-muted: #5E7166;
+}
+
+:root {
+  --color-brand-forest: #28634C;
+  --color-brand-forest-dark: #24352C;
+  --color-brand-sand: #E8CDA8;
+  --color-brand-canvas: #FAF8F2;
+}
+
 @layer base {
   :root {
     font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    color: #24352C;
+    background-color: #FAF8F2;
   }
 
   h1, h2, h3, .font-display {

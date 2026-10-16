@@ -81,20 +81,20 @@ export const LoginPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#FAF7F2] dark:bg-[#181615] flex flex-col justify-between text-stone-800 dark:text-stone-100 font-sans selection:bg-[#EBF2EE]">
+    <div className="min-h-screen bg-[#FAF8F2] flex flex-col justify-between text-[#24352C] font-sans selection:bg-[#E8CDA8]/40 selection:text-[#24352C]">
       {/* Top Bar */}
-      <header className="border-b border-[#E8E2D8] dark:border-[#2D2825] bg-white/80 dark:bg-[#201D1B]/80 backdrop-blur-md">
+      <header className="border-b border-[#E8E2D8] bg-white/85 backdrop-blur-md">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2.5 font-bold text-lg">
-            <div className="w-8 h-8 rounded-xl bg-[#5E836F] text-white flex items-center justify-center font-serif text-sm shadow-sm">
+            <div className="w-8 h-8 rounded-xl bg-[#28634C] text-[#FAF8F2] flex items-center justify-center font-serif text-sm shadow-xs">
               TP
             </div>
-            <span className="font-bold text-stone-900 dark:text-white tracking-tight">
-              Turno<span className="text-[#5E836F] dark:text-[#8CB5A0] font-normal">Pro</span>
+            <span className="font-bold text-[#24352C] tracking-tight">
+              Turno<span className="text-[#28634C] font-normal">Pro</span>
             </span>
           </div>
 
-          <span className="text-xs text-stone-400">
+          <span className="text-xs text-[#5E7166]">
             Plataforma SaaS de Turnos, Clientes y Ventas
           </span>
         </div>
@@ -104,14 +104,14 @@ export const LoginPage: React.FC = () => {
       <main className="max-w-xl mx-auto px-4 py-8 sm:py-12 w-full space-y-6">
         {/* Sesión Activa */}
         {currentUser && (
-          <div className="bg-white dark:bg-[#201D1B] rounded-3xl border border-[#D5E3DB] dark:border-[#2E4738] p-5 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4 animate-in fade-in">
+          <div className="bg-white rounded-3xl border border-[#E8E2D8] p-5 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4 animate-in fade-in">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-2xl bg-[#EBF2EE] dark:bg-[#203026] text-[#3B6652] dark:text-[#A1CEB5] flex items-center justify-center font-bold text-base">
+              <div className="w-10 h-10 rounded-2xl bg-[#F7EFE4] text-[#28634C] flex items-center justify-center font-bold text-base border border-[#E8CDA8]/60">
                 {currentUser.full_name.charAt(0)}
               </div>
               <div>
                 <div className="flex items-center gap-2">
-                  <span className="text-xs font-bold text-stone-900 dark:text-white">
+                  <span className="text-xs font-bold text-[#24352C]">
                     {currentUser.full_name}
                   </span>
                   {currentUser.is_superadmin && (
@@ -120,7 +120,7 @@ export const LoginPage: React.FC = () => {
                     </span>
                   )}
                 </div>
-                <div className="text-[11px] text-stone-500 font-mono">
+                <div className="text-[11px] text-[#5E7166] font-mono">
                   @{currentUser.username} · Sesión iniciada
                 </div>
               </div>
@@ -132,15 +132,15 @@ export const LoginPage: React.FC = () => {
                 onClick={() =>
                   navigate(currentUser.is_superadmin ? '/admin/accounts' : '/admin/calendar')
                 }
-                className="px-3.5 py-2 rounded-xl bg-[#5E836F] hover:bg-[#4E705D] text-white text-xs font-semibold transition cursor-pointer flex items-center gap-1.5 shadow-xs"
+                className="px-3.5 py-2 rounded-xl bg-[#28634C] hover:bg-[#1E4E3B] text-white text-xs font-semibold transition cursor-pointer flex items-center gap-1.5 shadow-xs"
               >
                 <span>{currentUser.is_superadmin ? 'Ir a Consola Admin' : 'Ir a Mi Negocio'}</span>
-                <ArrowRight className="w-3.5 h-3.5" />
+                <ArrowRight className="w-3.5 h-3.5 text-[#E8CDA8]" />
               </button>
               <button
                 type="button"
                 onClick={() => logout()}
-                className="p-2 rounded-xl border border-[#E8E2D8] dark:border-[#38322E] text-stone-500 hover:text-red-600 transition cursor-pointer"
+                className="p-2 rounded-xl border border-[#E8E2D8] text-[#5E7166] hover:text-red-600 transition cursor-pointer"
                 title="Cerrar sesión"
               >
                 <LogOut className="w-4 h-4" />
@@ -150,60 +150,60 @@ export const LoginPage: React.FC = () => {
         )}
 
         {/* Formulario Tradicional de Login */}
-        <div className="bg-white dark:bg-[#201D1B] rounded-3xl border border-[#E8E2D8] dark:border-[#2D2825] shadow-xs p-6 sm:p-8 space-y-5">
+        <div className="bg-white rounded-3xl border border-[#E8E2D8] shadow-xs p-6 sm:p-8 space-y-5">
           <div className="text-center space-y-1.5">
-            <div className="w-12 h-12 rounded-2xl bg-[#EBF2EE] dark:bg-[#203026] text-[#3B6652] dark:text-[#A1CEB5] flex items-center justify-center mx-auto border border-[#D5E3DB] dark:border-[#2D4537] shadow-2xs">
+            <div className="w-12 h-12 rounded-2xl bg-[#F7EFE4] text-[#28634C] flex items-center justify-center mx-auto border border-[#E8CDA8]/60 shadow-2xs">
               <Lock className="w-5 h-5" />
             </div>
-            <h1 className="text-xl font-serif font-black text-stone-900 dark:text-white tracking-tight">
+            <h1 className="text-xl font-serif font-black text-[#24352C] tracking-tight">
               Ingreso al Sistema
             </h1>
-            <p className="text-xs text-stone-500 dark:text-stone-400">
+            <p className="text-xs text-[#5E7166]">
               Ingresá tu usuario y contraseña para continuar:
             </p>
           </div>
 
           {error && (
-            <div className="p-3 rounded-xl bg-red-50 dark:bg-red-950/30 text-red-700 dark:text-red-400 text-xs border border-red-200 dark:border-red-900">
+            <div className="p-3 rounded-xl bg-red-50 text-red-700 text-xs border border-red-200">
               {error}
             </div>
           )}
 
           <form onSubmit={handleLoginSubmit} className="space-y-4 text-xs">
             <div>
-              <label className="block font-semibold text-stone-700 dark:text-stone-300 mb-1">
+              <label className="block font-semibold text-[#24352C] mb-1">
                 Usuario
               </label>
               <div className="relative">
-                <User className="w-4 h-4 text-stone-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                <User className="w-4 h-4 text-[#5E7166] absolute left-3 top-1/2 -translate-y-1/2" />
                 <input
                   type="text"
                   required
                   placeholder="Tu nombre de usuario"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
-                  className="w-full bg-[#FAF7F2] dark:bg-[#1A1817] border border-[#E4DDD2] dark:border-[#352F2B] rounded-xl pl-9 pr-3 py-2.5 text-stone-900 dark:text-white focus:outline-[#5E836F] font-mono"
+                  className="w-full bg-[#FAF8F2] border border-[#E8E2D8] rounded-xl pl-9 pr-3 py-2.5 text-[#24352C] focus:outline-[#28634C] font-mono"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block font-semibold text-stone-700 dark:text-stone-300 mb-1">
+              <label className="block font-semibold text-[#24352C] mb-1">
                 Contraseña
               </label>
               <div className="relative">
-                <Lock className="w-4 h-4 text-stone-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                <Lock className="w-4 h-4 text-[#5E7166] absolute left-3 top-1/2 -translate-y-1/2" />
                 <input
                   type={showPassword ? 'text' : 'password'}
                   placeholder="Contraseña"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full bg-[#FAF7F2] dark:bg-[#1A1817] border border-[#E4DDD2] dark:border-[#352F2B] rounded-xl pl-9 pr-10 py-2.5 text-stone-900 dark:text-white focus:outline-[#5E836F] font-mono"
+                  className="w-full bg-[#FAF8F2] border border-[#E8E2D8] rounded-xl pl-9 pr-10 py-2.5 text-[#24352C] focus:outline-[#28634C] font-mono"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600 dark:hover:text-stone-200 cursor-pointer"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600 cursor-pointer"
                 >
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
@@ -216,9 +216,9 @@ export const LoginPage: React.FC = () => {
                   type="checkbox"
                   checked={rememberThisDevice}
                   onChange={(e) => setRememberThisDevice(e.target.checked)}
-                  className="w-4 h-4 rounded text-[#5E836F] accent-[#5E836F]"
+                  className="w-4 h-4 rounded text-[#28634C] accent-[#28634C]"
                 />
-                <span className="text-xs text-stone-600 dark:text-stone-300">
+                <span className="text-xs text-[#5E7166]">
                   Recordar en este equipo
                 </span>
               </label>
@@ -226,17 +226,17 @@ export const LoginPage: React.FC = () => {
 
             <button
               type="submit"
-              className="w-full py-3 rounded-xl bg-[#5E836F] hover:bg-[#4E705D] text-white font-semibold text-sm shadow-xs transition flex items-center justify-center gap-2 cursor-pointer mt-2"
+              className="w-full py-3 rounded-xl bg-[#28634C] hover:bg-[#1E4E3B] text-white font-semibold text-sm shadow-xs transition flex items-center justify-center gap-2 cursor-pointer mt-2"
             >
               <span>Ingresar</span>
-              <ArrowRight className="w-4 h-4" />
+              <ArrowRight className="w-4 h-4 text-[#E8CDA8]" />
             </button>
           </form>
         </div>
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-[#E8E2D8] dark:border-[#2D2825] py-4 text-center text-xs text-stone-400">
+      <footer className="border-t border-[#E8E2D8] py-4 text-center text-xs text-[#5E7166]">
         TurnoPro SaaS · Sistema de Gestión de Turnos, Clientes y Ventas
       </footer>
     </div>

@@ -76,14 +76,14 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
       ];
 
   return (
-    <div className="min-h-screen bg-[#FAF7F2] dark:bg-[#171514] flex flex-col text-stone-800 dark:text-stone-100 font-sans transition-colors duration-200">
+    <div className="min-h-screen bg-[#FAF8F2] flex flex-col text-[#24352C] font-sans selection:bg-[#E8CDA8]/40 selection:text-[#24352C]">
       {/* Top Navbar */}
-      <header className="sticky top-0 z-40 bg-white/90 dark:bg-[#201D1B]/90 backdrop-blur-md border-b border-[#E8E2D8] dark:border-[#2D2825]">
+      <header className="sticky top-0 z-40 bg-white/85 backdrop-blur-md border-b border-[#E8E2D8]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="lg:hidden p-2 rounded-xl text-stone-600 dark:text-stone-300 hover:bg-[#F2ECE4] dark:hover:bg-[#2A2624]"
+              className="lg:hidden p-2 rounded-xl text-[#24352C] hover:bg-[#FAF8F2]"
             >
               {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </button>
@@ -93,26 +93,25 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
               to={currentUser.is_superadmin ? '/admin/accounts' : '/admin/calendar'}
               className="flex items-center gap-2.5 group"
             >
-              <div className="w-8 h-8 rounded-xl bg-[#5E836F] text-white flex items-center justify-center font-serif font-bold text-sm shadow-sm">
+              <div className="w-8 h-8 rounded-xl bg-[#28634C] text-[#FAF8F2] flex items-center justify-center font-serif font-bold text-sm shadow-xs">
                 TP
               </div>
-              <span className="hidden sm:inline font-bold text-lg tracking-tight text-stone-900 dark:text-white">
-                Turno<span className="text-[#5E836F] dark:text-[#8CB5A0] font-normal">Pro</span>
+              <span className="hidden sm:inline font-bold text-lg tracking-tight text-[#24352C]">
+                Turno<span className="text-[#28634C] font-normal">Pro</span>
               </span>
             </Link>
 
             {/* Indicator según tipo de usuario */}
             {currentUser.is_superadmin ? (
-              <div className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1.5 rounded-xl border border-amber-300 dark:border-amber-900 bg-amber-50 dark:bg-amber-950/40 text-xs font-bold text-amber-800 dark:text-amber-200">
+              <div className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1.5 rounded-xl border border-amber-300 bg-amber-50 text-xs font-bold text-amber-800">
                 <Crown className="w-3.5 h-3.5 text-amber-500 shrink-0" />
                 <span className="truncate max-w-[140px] sm:max-w-none">Super Admin</span>
               </div>
             ) : (
-              /* Negocio único del cliente (1 usuario = 1 negocio, sin selector multi-comercio) */
-              <div className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1.5 rounded-xl border border-[#E4DDD2] dark:border-[#352F2B] bg-[#F7F3EC] dark:bg-[#262220] text-xs sm:text-sm font-semibold text-stone-800 dark:text-stone-200 min-w-0">
-                <Store className="w-3.5 h-3.5 text-[#5E836F] shrink-0" />
+              <div className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1.5 rounded-xl border border-[#E8E2D8] bg-[#FAF8F2] text-xs sm:text-sm font-semibold text-[#24352C] min-w-0">
+                <Store className="w-3.5 h-3.5 text-[#28634C] shrink-0" />
                 <span className="font-bold truncate max-w-[120px] sm:max-w-[200px] md:max-w-none">{currentOrg.name}</span>
-                <span className={`hidden md:inline-flex text-[10px] px-2 py-0.5 rounded-md border font-bold ${industryInfo.badgeBg} ${industryInfo.badgeText}`}>
+                <span className="hidden md:inline-flex text-[10px] px-2 py-0.5 rounded-md border border-[#E8CDA8]/60 bg-[#F7EFE4] text-[#28634C] font-bold">
                   {industryInfo.emoji} {industryInfo.name.split(' ')[0]}
                 </span>
               </div>
@@ -122,15 +121,15 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
           {/* Right Header items */}
           <div className="flex items-center gap-3">
             {/* User display */}
-            <div className="flex items-center gap-2.5 p-1 pl-2.5 rounded-xl bg-[#FAF7F2] dark:bg-[#262220] border border-[#E4DDD2] dark:border-[#352F2B] text-xs">
-              <div className="w-7 h-7 rounded-lg bg-[#5E836F] text-white flex items-center justify-center font-bold text-xs shrink-0 shadow-2xs">
+            <div className="flex items-center gap-2.5 p-1 pl-2.5 rounded-xl bg-[#FAF8F2] border border-[#E8E2D8] text-xs">
+              <div className="w-7 h-7 rounded-lg bg-[#28634C] text-[#FAF8F2] flex items-center justify-center font-bold text-xs shrink-0 shadow-2xs">
                 {currentUser.full_name.charAt(0)}
               </div>
               <div className="hidden sm:block text-left pr-1">
-                <div className="font-bold text-stone-900 dark:text-white leading-tight">
+                <div className="font-bold text-[#24352C] leading-tight">
                   {currentUser.full_name}
                 </div>
-                <div className="text-[10px] text-stone-400 font-mono">
+                <div className="text-[10px] text-[#5E7166] font-mono">
                   @{currentUser.username}
                 </div>
               </div>
@@ -139,7 +138,7 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
             {/* Logout button */}
             <button
               onClick={() => logout()}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-[#E8E2D8] dark:border-[#38322E] bg-white dark:bg-[#201D1B] hover:bg-red-50 dark:hover:bg-red-950/30 hover:border-red-200 dark:hover:border-red-900 text-stone-600 dark:text-stone-300 hover:text-red-600 dark:hover:text-red-400 text-xs font-semibold transition cursor-pointer"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-[#E8E2D8] bg-white hover:bg-red-50 hover:border-red-200 text-[#5E7166] hover:text-red-600 text-xs font-semibold transition cursor-pointer"
               title="Cerrar sesión"
             >
               <LogOut className="w-3.5 h-3.5" />
@@ -154,8 +153,8 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
         {/* Desktop Sidebar Navigation */}
         <aside className="hidden lg:block w-64 shrink-0">
           <div className="sticky top-24 space-y-4">
-            <div className="bg-white dark:bg-[#201D1B] rounded-3xl border border-[#E8E2D8] dark:border-[#2D2825] p-3 shadow-xs">
-              <div className="px-3 py-2 text-[10px] font-bold text-stone-400 uppercase tracking-wider">
+            <div className="bg-white rounded-3xl border border-[#E8E2D8] p-3 shadow-xs">
+              <div className="px-3 py-2 text-[10px] font-bold text-[#5E7166] uppercase tracking-wider">
                 {currentUser.is_superadmin ? 'Super Admin' : 'Panel del Negocio'}
               </div>
               <nav className="space-y-1">
@@ -168,8 +167,8 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
                       to={item.href}
                       className={`flex items-center justify-between px-3.5 py-2.5 rounded-2xl text-xs font-semibold transition ${
                         isActive
-                          ? 'bg-[#5E836F] text-white shadow-xs'
-                          : 'text-stone-700 dark:text-stone-300 hover:bg-[#FAF7F2] dark:hover:bg-[#282422]'
+                          ? 'bg-[#28634C] text-white shadow-xs'
+                          : 'text-[#24352C] hover:bg-[#FAF8F2] hover:text-[#28634C]'
                       }`}
                     >
                       <div className="flex items-center gap-3">
@@ -181,7 +180,7 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
                           className={`text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded-md ${
                             isActive
                               ? 'bg-white/20 text-white'
-                              : 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300'
+                              : 'bg-amber-100 text-amber-800'
                           }`}
                         >
                           {item.badge}
@@ -205,9 +204,9 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
               className="fixed inset-0 bg-black/40 backdrop-blur-xs"
               onClick={() => setMobileMenuOpen(false)}
             />
-            <div className="fixed inset-y-0 left-0 w-72 bg-white dark:bg-[#201D1B] p-5 shadow-2xl space-y-4 overflow-y-auto">
-              <div className="flex items-center justify-between pb-3 border-b border-[#E8E2D8] dark:border-[#2D2825]">
-                <div className="font-bold text-base text-stone-900 dark:text-white">Menú</div>
+            <div className="fixed inset-y-0 left-0 w-72 bg-white p-5 shadow-2xl space-y-4 overflow-y-auto">
+              <div className="flex items-center justify-between pb-3 border-b border-[#E8E2D8]">
+                <div className="font-bold text-base text-[#24352C]">Menú</div>
                 <button
                   onClick={() => setMobileMenuOpen(false)}
                   className="p-1 rounded-lg text-stone-400 hover:text-stone-700"
@@ -227,8 +226,8 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
                       onClick={() => setMobileMenuOpen(false)}
                       className={`flex items-center justify-between px-3.5 py-2.5 rounded-2xl text-xs font-semibold transition ${
                         isActive
-                          ? 'bg-[#5E836F] text-white shadow-xs'
-                          : 'text-stone-700 dark:text-stone-300 hover:bg-[#FAF7F2] dark:hover:bg-[#282422]'
+                          ? 'bg-[#28634C] text-white shadow-xs'
+                          : 'text-[#24352C] hover:bg-[#FAF8F2]'
                       }`}
                     >
                       <div className="flex items-center gap-3">
@@ -245,13 +244,13 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
                 })}
               </nav>
 
-              <div className="pt-4 border-t border-[#E8E2D8] dark:border-[#2D2825]">
+              <div className="pt-4 border-t border-[#E8E2D8]">
                 <button
                   onClick={() => {
                     setMobileMenuOpen(false);
                     logout();
                   }}
-                  className="w-full flex items-center gap-2 p-2.5 rounded-xl text-xs text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/20 font-semibold transition"
+                  className="w-full flex items-center gap-2 p-2.5 rounded-xl text-xs text-red-600 hover:bg-red-50 font-semibold transition"
                 >
                   <LogOut className="w-4 h-4" />
                   <span>Cerrar Sesión</span>
@@ -269,13 +268,13 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
 
       {/* Mobile Bottom Navigation Bar (Quick thumb access for mobile devices) */}
       {!currentUser.is_superadmin && (
-        <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 dark:bg-[#201D1B]/95 backdrop-blur-md border-t border-[#E8E2D8] dark:border-[#2D2825] px-2 py-1.5 flex items-center justify-around shadow-lg">
+        <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-[#E8E2D8] px-2 py-1.5 flex items-center justify-around shadow-lg">
           <Link
             to="/admin/calendar"
             className={`flex flex-col items-center justify-center p-1.5 rounded-xl transition ${
               location.pathname === '/admin/calendar'
-                ? 'text-[#335946] dark:text-[#A1CEB5] font-bold'
-                : 'text-stone-400 hover:text-stone-700 dark:hover:text-stone-200'
+                ? 'text-[#28634C] font-bold'
+                : 'text-[#5E7166] hover:text-[#24352C]'
             }`}
           >
             <Calendar className="w-5 h-5" />
@@ -286,8 +285,8 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
             to="/admin/clients"
             className={`flex flex-col items-center justify-center p-1.5 rounded-xl transition ${
               location.pathname === '/admin/clients'
-                ? 'text-[#335946] dark:text-[#A1CEB5] font-bold'
-                : 'text-stone-400 hover:text-stone-700 dark:hover:text-stone-200'
+                ? 'text-[#28634C] font-bold'
+                : 'text-[#5E7166] hover:text-[#24352C]'
             }`}
           >
             <Users className="w-5 h-5" />
@@ -298,8 +297,8 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
             to="/admin/sales"
             className={`flex flex-col items-center justify-center p-1.5 rounded-xl transition ${
               location.pathname === '/admin/sales'
-                ? 'text-[#335946] dark:text-[#A1CEB5] font-bold'
-                : 'text-stone-400 hover:text-stone-700 dark:hover:text-stone-200'
+                ? 'text-[#28634C] font-bold'
+                : 'text-[#5E7166] hover:text-[#24352C]'
             }`}
           >
             <ReceiptText className="w-5 h-5" />
@@ -310,8 +309,8 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
             to="/admin/services"
             className={`flex flex-col items-center justify-center p-1.5 rounded-xl transition ${
               location.pathname === '/admin/services'
-                ? 'text-[#335946] dark:text-[#A1CEB5] font-bold'
-                : 'text-stone-400 hover:text-stone-700 dark:hover:text-stone-200'
+                ? 'text-[#28634C] font-bold'
+                : 'text-[#5E7166] hover:text-[#24352C]'
             }`}
           >
             <Scissors className="w-5 h-5" />
@@ -321,7 +320,7 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
           <button
             type="button"
             onClick={() => setMobileMenuOpen(true)}
-            className="flex flex-col items-center justify-center p-1.5 rounded-xl text-stone-400 hover:text-stone-700 dark:hover:text-stone-200 transition"
+            className="flex flex-col items-center justify-center p-1.5 rounded-xl text-[#5E7166] hover:text-[#24352C] transition"
           >
             <Menu className="w-5 h-5" />
             <span className="text-[10px] mt-0.5">Menú</span>
