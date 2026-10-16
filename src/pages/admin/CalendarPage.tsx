@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   Calendar as CalendarIcon,
   Clock,
@@ -22,9 +22,19 @@ import {
   Globe,
   Copy,
   Check,
+  Play,
+  Timer,
+  CheckCircle2,
+  DollarSign,
+  PlusCircle,
+  MessageCircle,
+  CreditCard,
+  Banknote,
+  Smartphone,
+  Phone,
 } from 'lucide-react';
 import { useTenant } from '../../lib/store/tenant-context';
-import { AppointmentStatus, Appointment } from '../../types/database.types';
+import { AppointmentStatus, Appointment, PaymentMethod } from '../../types/database.types';
 import { RubroAccountBanner } from '../../components/common/RubroAccountBanner';
 import { CustomerSearchSelect } from '../../components/common/CustomerSearchSelect';
 
@@ -41,6 +51,7 @@ export const CalendarPage: React.FC = () => {
     updateAppointmentStatus,
     rescheduleAppointment,
     cancelAppointment,
+    createSale,
   } = useTenant();
 
   // Filters & Views
@@ -169,6 +180,135 @@ export const CalendarPage: React.FC = () => {
     }
   };
 
+  // Real-time ticker for in-progress turnos
+  const [currentTime, setCurrentTime] = useState<number>(Date.now());
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentTime(Date.now());
+    }, 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Finish & Checkout Modal state
+  const [finishModalAppt, setFinishModalAppt] = useState<Appointment | null>(null);
+  const [finishPaymentMethod, setFinishPaymentMethod] = useState<PaymentMethod>('cash');
+
+  const inProgressAppointments = useMemo(() => {
+    return appointments.filter(
+      (a) =>
+        a.organization_id === currentOrg.id &&
+        a.branch_id === currentBranch.id &&
+        a.status === 'in_progress'
+    );
+  }, [appointments, currentOrg.id, currentBranch.id]);
+
+  const getSessionStartTime = (appointmentId: string): number => {
+    const saved = localStorage.getItem(`tp_session_start_${appointmentId}`);
+    if (saved) return Number(saved);
+    return Date.now();
+  };
+
+  const getSessionExtraMinutes = (appointmentId: string): number => {
+    const saved = localStorage.getItem(`tp_session_extra_${appointmentId}`);
+    if (saved) return Number(saved);
+    return 0;
+  };
+
+  const handleStartTurno = (appt: Appointment) => {
+    localStorage.setItem(`tp_session_start_${appt.id}`, String(Date.now()));
+    localStorage.setItem(`tp_session_extra_${appt.id}`, '0');
+    updateAppointmentStatus(appt.id, 'in_progress');
+    setActionMessage({
+      type: 'success',
+      text: `▶ Turno iniciado. Cronómetro en marcha (${appt.service_duration_minutes || 30} min estimados).`,
+    });
+  };
+
+  const handleAddMinutes = (appointmentId: string, minutes: number = 5) => {
+    const current = getSessionExtraMinutes(appointmentId);
+    localStorage.setItem(`tp_session_extra_${appointmentId}`, String(current + minutes));
+    setCurrentTime(Date.now());
+  };
+
+  const getTurnoTiming = (appt: Appointment) => {
+    const startTime = getSessionStartTime(appt.id);
+    const extraMinutes = getSessionExtraMinutes(appt.id);
+    const durationMinutes = (appt.service_duration_minutes || 30) + extraMinutes;
+    const totalSeconds = durationMinutes * 60;
+    const elapsedSeconds = Math.max(0, Math.floor((currentTime - startTime) / 1000));
+    const remainingSeconds = Math.max(0, totalSeconds - elapsedSeconds);
+    const isOverTime = elapsedSeconds > totalSeconds;
+    const overSeconds = isOverTime ? elapsedSeconds - totalSeconds : 0;
+
+    const formatTime = (secs: number) => {
+      const mins = Math.floor(secs / 60);
+      const s = secs % 60;
+      return `${String(mins).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+    };
+
+    const pct = Math.min(100, Math.round((elapsedSeconds / totalSeconds) * 100));
+
+    return {
+      durationMinutes,
+      elapsedMinutes: Math.max(1, Math.round(elapsedSeconds / 60)),
+      formattedRemaining: formatTime(remainingSeconds),
+      formattedOvertime: formatTime(overSeconds),
+      isOverTime,
+      pct,
+      remainingSeconds,
+    };
+  };
+
+  const handleOpenFinishModal = (appt: Appointment) => {
+    setFinishModalAppt(appt);
+    setFinishPaymentMethod('cash');
+  };
+
+  const handleConfirmFinishAndPay = (appt: Appointment) => {
+    const srv = services.find((s) => s.duration_minutes === appt.service_duration_minutes) || appt.service;
+    const timing = getTurnoTiming(appt);
+    const pendingAmount = Math.max(0, appt.total_amount - (appt.deposit_amount || 0));
+
+    createSale({
+      branchId: currentBranch.id,
+      customerId: appt.customer_id,
+      appointmentId: appt.id,
+      professionalId: appt.professional_id,
+      items: [
+        {
+          serviceId: srv?.id,
+          description: srv?.name || 'Servicio de Atención',
+          quantity: 1,
+          unitPrice: appt.total_amount,
+        },
+      ],
+      paymentMethod: finishPaymentMethod,
+      depositCreditApplied: appt.deposit_amount || 0,
+      notes: `Turno atendido (${timing.elapsedMinutes} min). Cobrado en mostrador vía ${finishPaymentMethod}.`,
+    });
+
+    updateAppointmentStatus(appt.id, 'completed');
+    localStorage.removeItem(`tp_session_start_${appt.id}`);
+    localStorage.removeItem(`tp_session_extra_${appt.id}`);
+
+    setFinishModalAppt(null);
+    setActionMessage({
+      type: 'success',
+      text: `✓ ¡Turno finalizado! Se registró el cobro de $${pendingAmount.toLocaleString()} en la caja.`,
+    });
+  };
+
+  const handleFinishWithoutPay = (appt: Appointment) => {
+    updateAppointmentStatus(appt.id, 'completed');
+    localStorage.removeItem(`tp_session_start_${appt.id}`);
+    localStorage.removeItem(`tp_session_extra_${appt.id}`);
+    setFinishModalAppt(null);
+    setActionMessage({
+      type: 'success',
+      text: 'Turno marcado como finalizado.',
+    });
+  };
+
   // Helper for status badge
   const renderStatusBadge = (status: AppointmentStatus) => {
     switch (status) {
@@ -193,6 +333,94 @@ export const CalendarPage: React.FC = () => {
     <div className="space-y-5">
       {/* Rubro & Account Identification Banner (Minimal & Sleek) */}
       <RubroAccountBanner />
+
+      {/* Active In-Progress Turno Sticky Widget */}
+      {inProgressAppointments.length > 0 && (
+        <div className="space-y-3">
+          {inProgressAppointments.map((inProgAppt) => {
+            const cust = customers.find((c) => c.id === inProgAppt.customer_id);
+            const prof = professionals.find((p) => p.id === inProgAppt.professional_id);
+            const srv =
+              services.find((s) => s.duration_minutes === inProgAppt.service_duration_minutes) ||
+              inProgAppt.service;
+            const timing = getTurnoTiming(inProgAppt);
+
+            return (
+              <div
+                key={inProgAppt.id}
+                className="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-[#28634C] to-[#1E4535] text-white shadow-md border border-[#E8CDA8]/40 flex flex-col md:flex-row md:items-center justify-between gap-4 animate-in fade-in"
+              >
+                <div className="flex items-center gap-3.5">
+                  <div className="w-12 h-12 rounded-2xl bg-white/15 flex items-center justify-center shrink-0 border border-white/20">
+                    <Scissors className="w-6 h-6 text-[#E8CDA8] animate-pulse" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-white/20 text-[#E8CDA8]">
+                        <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+                        Turno en curso
+                      </span>
+                      <span className="text-xs text-white/80">
+                        {prof?.display_name ? `Atiende ${prof.display_name}` : 'En atención'}
+                      </span>
+                    </div>
+                    <h3 className="font-bold text-base text-white tracking-tight mt-0.5">
+                      {cust?.full_name || 'Cliente'} — {srv?.name || 'Servicio'}
+                    </h3>
+                    <p className="text-xs text-white/70">
+                      Duración estimada: {timing.durationMinutes} min • {cust?.phone}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 shrink-0">
+                  {/* Digital Timer */}
+                  <div className="bg-white/10 px-4 py-2.5 rounded-xl border border-white/15 flex items-center gap-3">
+                    <Timer className="w-5 h-5 text-[#E8CDA8]" />
+                    <div>
+                      <div className="text-[10px] uppercase font-bold text-white/70 tracking-wider">
+                        {timing.isOverTime ? 'Tiempo excedido' : 'Tiempo restante'}
+                      </div>
+                      <div className="text-xl font-bold font-mono tracking-wider tabular-nums text-white">
+                        {timing.isOverTime ? `+${timing.formattedOvertime}` : timing.formattedRemaining}
+                      </div>
+                    </div>
+                    {/* Progress pill */}
+                    <div className="w-14 bg-white/20 h-2 rounded-full overflow-hidden">
+                      <div
+                        className={`h-full transition-all duration-1000 ${
+                          timing.isOverTime ? 'bg-amber-400' : 'bg-[#E8CDA8]'
+                        }`}
+                        style={{ width: `${timing.pct}%` }}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Actions */}
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => handleAddMinutes(inProgAppt.id, 5)}
+                      className="px-3 py-2.5 rounded-xl bg-white/15 hover:bg-white/25 text-white text-xs font-semibold border border-white/20 transition cursor-pointer"
+                      title="Extender 5 minutos más"
+                    >
+                      +5 min
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleOpenFinishModal(inProgAppt)}
+                      className="px-5 py-2.5 rounded-xl bg-[#E8CDA8] hover:bg-[#dfc097] text-[#24352C] font-bold text-xs shadow-sm transition hover:shadow active:scale-98 cursor-pointer flex items-center gap-1.5"
+                    >
+                      <CheckCircle2 className="w-4 h-4 text-[#28634C]" />
+                      <span>Ya terminé</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
 
       {/* Unified Toolbar: Date, Filters & Actions in a Single Clear Layout */}
       <div className="bg-white rounded-2xl border border-[#E8E2D8] p-4 shadow-xs space-y-3 sm:space-y-0 sm:flex sm:items-center sm:justify-between gap-4">
@@ -436,12 +664,43 @@ export const CalendarPage: React.FC = () => {
                             }`}
                           >
                             <div className="flex items-center justify-between">
-                              <span className="font-bold text-xs text-[#24352C] flex items-center gap-1.5 tabular-nums">
-                                <Clock className="w-3.5 h-3.5 text-[#28634C]" />
-                                {startTime} - {endTime} hs
-                              </span>
+                              <div>
+                                <span className="font-bold text-xs text-[#24352C] flex items-center gap-1.5 tabular-nums">
+                                  <Clock className="w-3.5 h-3.5 text-[#28634C]" />
+                                  {startTime} - {endTime} hs
+                                </span>
+                                <span className="text-[10px] text-[#5E7166] mt-0.5 block">
+                                  Duración: {appt.service_duration_minutes || 30} min aprox
+                                </span>
+                              </div>
                               {renderStatusBadge(appt.status)}
                             </div>
+
+                            {/* Active In-Progress Timer Inside Card */}
+                            {appt.status === 'in_progress' && (() => {
+                              const timing = getTurnoTiming(appt);
+                              return (
+                                <div className="p-3 bg-[#FAF8F2] rounded-xl border border-[#28634C]/30 space-y-2">
+                                  <div className="flex items-center justify-between">
+                                    <span className="text-[11px] font-bold text-[#28634C] flex items-center gap-1">
+                                      <Timer className="w-3.5 h-3.5" />
+                                      {timing.isOverTime ? 'Excedido:' : 'Restante:'}
+                                    </span>
+                                    <span className="text-sm font-bold font-mono tabular-nums text-[#24352C]">
+                                      {timing.isOverTime ? `+${timing.formattedOvertime}` : timing.formattedRemaining}
+                                    </span>
+                                  </div>
+                                  <div className="w-full bg-[#E8E2D8] h-1.5 rounded-full overflow-hidden">
+                                    <div
+                                      className={`h-full transition-all duration-1000 ${
+                                        timing.isOverTime ? 'bg-amber-500' : 'bg-[#28634C]'
+                                      }`}
+                                      style={{ width: `${timing.pct}%` }}
+                                    />
+                                  </div>
+                                </div>
+                              );
+                            })()}
 
                             <div>
                               <div className="font-semibold text-xs text-[#24352C] flex items-center justify-between">
@@ -462,34 +721,41 @@ export const CalendarPage: React.FC = () => {
 
                             {/* Action progression bar */}
                             <div className="pt-2 border-t border-[#E8E2D8] flex items-center justify-between gap-1.5">
-                              {appt.status === 'confirmed' && (
+                              {/* Iniciar turno button */}
+                              {(appt.status === 'confirmed' || appt.status === 'checked_in') && (
                                 <button
-                                  onClick={() => updateAppointmentStatus(appt.id, 'checked_in')}
-                                  className="flex-1 py-1.5 px-2 rounded-xl bg-[#F7EFE4] text-[#28634C] hover:bg-[#E8CDA8]/40 border border-[#E8CDA8]/60 text-[10px] font-bold transition flex items-center justify-center gap-1 cursor-pointer"
+                                  onClick={() => handleStartTurno(appt)}
+                                  className="flex-1 py-2 px-3 rounded-xl bg-[#28634C] hover:bg-[#1E4D3B] text-white text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer shadow-xs active:scale-98"
                                 >
-                                  <UserCheck className="w-3 h-3" />
-                                  <span>En Sala</span>
+                                  <Play className="w-3.5 h-3.5 fill-current text-[#E8CDA8]" />
+                                  <span>Iniciar turno</span>
                                 </button>
                               )}
 
-                              {appt.status === 'checked_in' && (
-                                <button
-                                  onClick={() => updateAppointmentStatus(appt.id, 'in_progress')}
-                                  className="flex-1 py-1.5 px-2 rounded-xl bg-amber-50 text-amber-900 hover:bg-amber-100 border border-amber-200 text-[10px] font-bold transition flex items-center justify-center gap-1 cursor-pointer"
-                                >
-                                  <PlayCircle className="w-3 h-3" />
-                                  <span>Atender</span>
-                                </button>
-                              )}
-
+                              {/* In-progress actions: +5min & Ya terminé */}
                               {appt.status === 'in_progress' && (
-                                <button
-                                  onClick={() => updateAppointmentStatus(appt.id, 'completed')}
-                                  className="flex-1 py-1.5 px-2 rounded-xl bg-[#28634C] text-white hover:bg-[#1E4E3B] text-[10px] font-bold transition flex items-center justify-center gap-1 cursor-pointer shadow-xs"
-                                >
-                                  <CheckCircle className="w-3 h-3 text-[#E8CDA8]" />
-                                  <span>Cobrar / Finalizar</span>
-                                </button>
+                                <>
+                                  <button
+                                    onClick={() => handleAddMinutes(appt.id, 5)}
+                                    className="py-2 px-2.5 rounded-xl border border-[#E8E2D8] bg-white hover:bg-[#FAF8F2] text-[11px] font-bold text-[#24352C] transition cursor-pointer"
+                                    title="Extender 5 minutos más"
+                                  >
+                                    +5 min
+                                  </button>
+                                  <button
+                                    onClick={() => handleOpenFinishModal(appt)}
+                                    className="flex-1 py-2 px-3 rounded-xl bg-[#28634C] hover:bg-[#1E4D3B] text-white text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer shadow-xs active:scale-98"
+                                  >
+                                    <CheckCircle2 className="w-3.5 h-3.5 text-[#E8CDA8]" />
+                                    <span>Ya terminé</span>
+                                  </button>
+                                </>
+                              )}
+
+                              {appt.status === 'completed' && (
+                                <div className="flex-1 py-1.5 text-center text-xs font-semibold text-[#28634C] bg-[#FAF8F2] rounded-xl border border-[#E8E2D8]">
+                                  ✓ Atendido y cobrado
+                                </div>
                               )}
 
                               {/* Reschedule Button */}
@@ -500,7 +766,7 @@ export const CalendarPage: React.FC = () => {
                                     setRescheduleDateStr(appt.starts_at.split('T')[0]);
                                     setShowRescheduleModal(true);
                                   }}
-                                  className="py-1.5 px-2.5 rounded-xl border border-[#E8E2D8] text-[#5E7166] hover:text-[#24352C] hover:bg-[#FAF8F2] text-[10px] font-medium transition cursor-pointer"
+                                  className="py-1.5 px-2 rounded-xl border border-[#E8E2D8] text-[#5E7166] hover:text-[#24352C] hover:bg-[#FAF8F2] text-[10px] font-medium transition cursor-pointer"
                                 >
                                   Reprogramar
                                 </button>
@@ -569,16 +835,36 @@ export const CalendarPage: React.FC = () => {
                         ${appt.total_amount.toLocaleString()}
                       </td>
                       <td className="px-4 py-3 text-right">
-                        <button
-                          onClick={() => {
-                            setActiveAppointment(appt);
-                            setRescheduleDateStr(appt.starts_at.split('T')[0]);
-                            setShowRescheduleModal(true);
-                          }}
-                          className="px-2.5 py-1 text-[11px] font-semibold rounded-lg border border-[#E4DDD2] dark:border-[#352F2B] hover:bg-[#F7F3EC] dark:hover:bg-[#282421] text-stone-700 dark:text-stone-200 transition"
-                        >
-                          Reprogramar
-                        </button>
+                        <div className="flex items-center justify-end gap-1.5">
+                          {(appt.status === 'confirmed' || appt.status === 'checked_in') && (
+                            <button
+                              onClick={() => handleStartTurno(appt)}
+                              className="px-2.5 py-1 text-[11px] font-bold rounded-lg bg-[#28634C] hover:bg-[#1E4D3B] text-white transition flex items-center gap-1 shadow-2xs cursor-pointer"
+                            >
+                              <Play className="w-3 h-3 fill-current text-[#E8CDA8]" />
+                              <span>Iniciar</span>
+                            </button>
+                          )}
+                          {appt.status === 'in_progress' && (
+                            <button
+                              onClick={() => handleOpenFinishModal(appt)}
+                              className="px-2.5 py-1 text-[11px] font-bold rounded-lg bg-[#E8CDA8] hover:bg-[#dfc097] text-[#24352C] transition flex items-center gap-1 shadow-2xs cursor-pointer"
+                            >
+                              <CheckCircle2 className="w-3 h-3 text-[#28634C]" />
+                              <span>Ya terminé</span>
+                            </button>
+                          )}
+                          <button
+                            onClick={() => {
+                              setActiveAppointment(appt);
+                              setRescheduleDateStr(appt.starts_at.split('T')[0]);
+                              setShowRescheduleModal(true);
+                            }}
+                            className="px-2.5 py-1 text-[11px] font-semibold rounded-lg border border-[#E4DDD2] hover:bg-[#F7F3EC] text-stone-700 transition cursor-pointer"
+                          >
+                            Reprogramar
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   );
@@ -807,6 +1093,201 @@ export const CalendarPage: React.FC = () => {
                 Confirmar Reprogramación
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: RESUMEN DE ATENCIÓN & COBRO */}
+      {finishModalAppt && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-stone-900/60 backdrop-blur-xs p-4">
+          <div className="w-full max-w-lg bg-white rounded-3xl border border-[#E8E2D8] p-6 shadow-2xl space-y-5 animate-in fade-in zoom-in-95 max-h-[90vh] overflow-y-auto">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between pb-3 border-b border-[#E8E2D8]">
+              <div className="flex items-center gap-2.5">
+                <div className="w-10 h-10 rounded-2xl bg-[#28634C] text-[#E8CDA8] flex items-center justify-center shadow-xs">
+                  <CheckCircle2 className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-lg text-[#24352C]">¡Turno Finalizado!</h3>
+                  <p className="text-xs text-[#5E7166]">Resumen del servicio y cobro en mostrador</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setFinishModalAppt(null)}
+                className="text-stone-400 hover:text-stone-600 p-1 rounded-xl transition cursor-pointer"
+              >
+                <XCircle className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            {(() => {
+              const cust = customers.find((c) => c.id === finishModalAppt.customer_id);
+              const prof = professionals.find((p) => p.id === finishModalAppt.professional_id);
+              const srv =
+                services.find((s) => s.duration_minutes === finishModalAppt.service_duration_minutes) ||
+                finishModalAppt.service;
+              const timing = getTurnoTiming(finishModalAppt);
+              const deposit = finishModalAppt.deposit_amount || 0;
+              const pendingAmount = Math.max(0, finishModalAppt.total_amount - deposit);
+              const cleanPhone = cust?.phone?.replace(/\D/g, '') || '';
+
+              return (
+                <div className="space-y-4">
+                  {/* Card 1: Cliente Info */}
+                  <div className="p-4 rounded-2xl bg-[#FAF8F2] border border-[#E8E2D8] space-y-2">
+                    <div className="text-[11px] font-bold uppercase tracking-wider text-[#5E7166]">
+                      Datos del Cliente
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <div className="font-bold text-sm text-[#24352C]">{cust?.full_name || 'Cliente'}</div>
+                        <div className="text-xs text-[#5E7166] mt-0.5">{cust?.phone || 'Sin teléfono registrado'}</div>
+                      </div>
+                      {cleanPhone && (
+                        <a
+                          href={`https://wa.me/${cleanPhone}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold transition shadow-xs cursor-pointer"
+                        >
+                          <Phone className="w-3.5 h-3.5" />
+                          <span>WhatsApp</span>
+                        </a>
+                      )}
+                    </div>
+                    {finishModalAppt.customer_notes && (
+                      <p className="text-xs text-[#24352C] bg-white p-2.5 rounded-xl border border-[#E8E2D8] italic">
+                        "{finishModalAppt.customer_notes}"
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Card 2: Lo que se realizó */}
+                  <div className="p-4 rounded-2xl bg-[#FAF8F2] border border-[#E8E2D8] space-y-2">
+                    <div className="text-[11px] font-bold uppercase tracking-wider text-[#5E7166]">
+                      Servicio Realizado
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold text-sm text-[#24352C]">{srv?.name || 'Servicio de Atención'}</span>
+                      <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full bg-[#28634C]/10 text-[#28634C]">
+                        {prof?.display_name || 'Profesional'}
+                      </span>
+                    </div>
+                    <div className="text-xs text-[#5E7166] flex items-center gap-2 pt-1 border-t border-[#E8E2D8]">
+                      <Clock className="w-3.5 h-3.5 text-[#28634C]" />
+                      <span>
+                        Tiempo: <strong>{timing.elapsedMinutes} min dedicados</strong> (Estimado: {timing.durationMinutes} min)
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Card 3: Monto a Cobrar */}
+                  <div className="p-4 rounded-2xl bg-gradient-to-br from-[#FAF8F2] to-[#F7EFE4] border-2 border-[#E8CDA8] space-y-2.5">
+                    <div className="text-[11px] font-bold uppercase tracking-wider text-[#5E7166]">
+                      Liquidación & Cobro
+                    </div>
+                    <div className="space-y-1 text-xs">
+                      <div className="flex justify-between text-[#5E7166]">
+                        <span>Precio del Servicio:</span>
+                        <span className="font-semibold text-[#24352C]">${finishModalAppt.total_amount.toLocaleString()}</span>
+                      </div>
+                      {deposit > 0 && (
+                        <div className="flex justify-between text-emerald-700 font-medium">
+                          <span>Seña abonada previamente:</span>
+                          <span>-${deposit.toLocaleString()}</span>
+                        </div>
+                      )}
+                    </div>
+                    <div className="pt-2 border-t border-[#E8CDA8] flex items-center justify-between">
+                      <div>
+                        <span className="text-xs font-bold text-[#5E7166] block">TOTAL A COBRAR:</span>
+                        <span className="text-[11px] text-[#5E7166]">Saldo a percibir en mostrador</span>
+                      </div>
+                      <span className="text-3xl font-extrabold text-[#28634C] tabular-nums tracking-tight">
+                        ${pendingAmount.toLocaleString()}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Card 4: Método de Pago */}
+                  <div>
+                    <label className="block text-xs font-bold text-[#24352C] mb-2">
+                      ¿Cómo paga el cliente?
+                    </label>
+                    <div className="grid grid-cols-3 gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setFinishPaymentMethod('cash')}
+                        className={`p-3 rounded-xl border text-center transition flex flex-col items-center gap-1 cursor-pointer ${
+                          finishPaymentMethod === 'cash'
+                            ? 'border-[#28634C] bg-[#28634C] text-white shadow-xs font-bold'
+                            : 'border-[#E8E2D8] bg-[#FAF8F2] text-[#5E7166] hover:bg-white'
+                        }`}
+                      >
+                        <Banknote className="w-5 h-5" />
+                        <span className="text-xs">Efectivo</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setFinishPaymentMethod('transfer')}
+                        className={`p-3 rounded-xl border text-center transition flex flex-col items-center gap-1 cursor-pointer ${
+                          finishPaymentMethod === 'transfer'
+                            ? 'border-[#28634C] bg-[#28634C] text-white shadow-xs font-bold'
+                            : 'border-[#E8E2D8] bg-[#FAF8F2] text-[#5E7166] hover:bg-white'
+                        }`}
+                      >
+                        <Smartphone className="w-5 h-5" />
+                        <span className="text-xs">Transferencia</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => setFinishPaymentMethod('card')}
+                        className={`p-3 rounded-xl border text-center transition flex flex-col items-center gap-1 cursor-pointer ${
+                          finishPaymentMethod === 'card'
+                            ? 'border-[#28634C] bg-[#28634C] text-white shadow-xs font-bold'
+                            : 'border-[#E8E2D8] bg-[#FAF8F2] text-[#5E7166] hover:bg-white'
+                        }`}
+                      >
+                        <CreditCard className="w-5 h-5" />
+                        <span className="text-xs">Tarjeta / POS</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Actions */}
+                  <div className="pt-3 border-t border-[#E8E2D8] space-y-2">
+                    <button
+                      type="button"
+                      onClick={() => handleConfirmFinishAndPay(finishModalAppt)}
+                      className="w-full py-3 rounded-xl bg-[#28634C] hover:bg-[#1E4D3B] text-white font-bold text-sm shadow-md transition hover:shadow-lg active:scale-98 cursor-pointer flex items-center justify-center gap-2"
+                    >
+                      <CheckCircle2 className="w-4 h-4 text-[#E8CDA8]" />
+                      <span>Confirmar Cobro de ${pendingAmount.toLocaleString()} y Cerrar Turno</span>
+                    </button>
+
+                    <div className="flex items-center justify-between gap-2">
+                      <button
+                        type="button"
+                        onClick={() => handleFinishWithoutPay(finishModalAppt)}
+                        className="text-xs text-[#5E7166] hover:text-[#24352C] underline transition cursor-pointer"
+                      >
+                        Cerrar sin cobrar ahora (pendiente)
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setFinishModalAppt(null)}
+                        className="px-3 py-1.5 rounded-xl border border-[#E8E2D8] text-xs font-semibold text-[#5E7166] hover:bg-[#FAF8F2] transition cursor-pointer"
+                      >
+                        Volver al timer
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
           </div>
         </div>
       )}
