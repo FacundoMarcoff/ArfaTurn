@@ -1,474 +1,649 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
 import {
-  ShieldCheck,
-  UserPlus,
   Users,
-  Copy,
-  Check,
-  ShieldAlert,
-  Award,
-  Clock,
-  Sparkles,
-  Lock,
-  Sliders,
-  AlertTriangle,
-  Plus,
+  UserPlus,
+  ShieldCheck,
+  UserCheck,
+  KeyRound,
   Trash2,
   X,
+  Sparkles,
+  Scissors,
+  CheckCircle2,
+  Info,
+  Calendar,
+  DollarSign,
+  Globe,
+  Lock,
 } from 'lucide-react';
 import { useTenant } from '../../lib/store/tenant-context';
 import { MemberRole } from '../../types/database.types';
-import { ROLE_PERMISSIONS, Permission } from '../../types/rbac.types';
 
 export const TeamPage: React.FC = () => {
-  const { currentOrg, currentBranch, professionals, currentRole, createProfessional, deleteProfessional } = useTenant();
-  const [inviteEmail, setInviteEmail] = useState('');
-  const [inviteRole, setInviteRole] = useState<MemberRole>('receptionist');
-  const [generatedInvite, setGeneratedInvite] = useState<string | null>(null);
-  const [copied, setCopied] = useState(false);
+  const {
+    currentOrg,
+    currentBranch,
+    professionals,
+    profiles,
+    memberships,
+    createProfessional,
+    deleteProfessional,
+  } = useTenant();
 
-  // New professional modal state
-  const [showNewProfModal, setShowNewProfModal] = useState(false);
-  const [newProfName, setNewProfName] = useState('');
-  const [newProfSpecialty, setNewProfSpecialty] = useState('');
-  const [newProfCommission, setNewProfCommission] = useState(50);
-  const [newProfColor, setNewProfColor] = useState('#2A5C43');
-  const [newProfIsPublic, setNewProfIsPublic] = useState(true);
+  // Modal State
+  const [showModal, setShowModal] = useState(false);
+  const [name, setName] = useState('');
+  const [role, setRole] = useState<'professional' | 'receptionist' | 'admin'>('professional');
+  const [specialty, setSpecialty] = useState('');
+  const [commission, setCommission] = useState(50);
+  const [color, setColor] = useState('#28634C');
+  const [isPublic, setIsPublic] = useState(true);
+
+  // Access credentials (optional)
+  const [enableLogin, setEnableLogin] = useState(false);
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+
+  // Active filter tab
+  const [activeTab, setActiveTab] = useState<'all' | 'admin' | 'professional' | 'receptionist'>('all');
 
   const orgProfessionals = professionals.filter((p) => p.organization_id === currentOrg.id);
 
-  const handleCreateProfessional = (e: React.FormEvent) => {
+  // Find linked profile if any for a professional
+  const getLinkedProfile = (prof: typeof professionals[0]) => {
+    if (prof.member_id) {
+      const mem = memberships.find((m) => m.id === prof.member_id);
+      if (mem) {
+        return profiles.find((p) => p.id === mem.user_id);
+      }
+    }
+    // Match by display name or username
+    return profiles.find(
+      (p) =>
+        p.full_name?.toLowerCase() === prof.display_name.toLowerCase() ||
+        p.username?.toLowerCase() === prof.display_name.toLowerCase()
+    );
+  };
+
+  const handleCreateMember = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newProfName.trim()) return;
+    if (!name.trim()) return;
+
     createProfessional({
-      displayName: newProfName.trim(),
-      specialty: newProfSpecialty.trim() || undefined,
-      commissionRatePct: Number(newProfCommission),
-      colorTag: newProfColor,
-      isPublic: newProfIsPublic,
+      displayName: name.trim(),
+      specialty: specialty.trim() || (role === 'admin' ? 'Administrador' : role === 'receptionist' ? 'Recepción' : 'Profesional'),
+      commissionRatePct: role === 'receptionist' ? 0 : Number(commission),
+      colorTag: color,
+      isPublic: role === 'receptionist' ? false : isPublic,
+      role: role as MemberRole,
+      username: enableLogin && username.trim() ? username.trim().toLowerCase() : undefined,
+      password: enableLogin && password.trim() ? password.trim() : undefined,
     });
-    setNewProfName('');
-    setNewProfSpecialty('');
-    setNewProfCommission(50);
-    setShowNewProfModal(false);
+
+    // Reset & close
+    setName('');
+    setSpecialty('');
+    setCommission(50);
+    setColor('#28634C');
+    setIsPublic(true);
+    setEnableLogin(false);
+    setUsername('');
+    setPassword('');
+    setShowModal(false);
   };
 
-  const handleGenerateInvite = (e: React.FormEvent) => {
-    e.preventDefault();
-    const token = `inv-${Math.random().toString(36).substring(2)}${Date.now().toString(36)}`;
-    const inviteUrl = `${window.location.origin}/invite/${token}`;
-    setGeneratedInvite(inviteUrl);
-  };
+  // Filtered list
+  const filteredList = orgProfessionals.filter((prof) => {
+    if (activeTab === 'all') return true;
+    const linked = getLinkedProfile(prof);
+    const profRole = linked?.is_superadmin ? 'admin' : (prof.member_id ? 'professional' : 'professional');
+    return profRole === activeTab || (activeTab === 'professional' && !linked);
+  });
 
-  const handleCopy = () => {
-    if (!generatedInvite) return;
-    navigator.clipboard.writeText(generatedInvite);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+  // Role pill styling helper
+  const renderRoleBadge = (roleName: string) => {
+    switch (roleName) {
+      case 'admin':
+      case 'owner':
+        return (
+          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-[#E8CDA8]/30 text-[#24352C] border border-[#E8CDA8]/60">
+            <ShieldCheck className="w-3 h-3 text-[#28634C]" />
+            Dueño / Admin
+          </span>
+        );
+      case 'receptionist':
+        return (
+          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-blue-50 text-blue-700 border border-blue-200">
+            <UserCheck className="w-3 h-3" />
+            Recepción
+          </span>
+        );
+      default:
+        return (
+          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-[#28634C]/10 text-[#28634C] border border-[#28634C]/25">
+            <Scissors className="w-3 h-3" />
+            Profesional
+          </span>
+        );
+    }
   };
-
-  const allPermissions: { key: Permission; label: string }[] = [
-    { key: 'appointments:view', label: 'Ver Agenda y Turnos' },
-    { key: 'appointments:create', label: 'Crear Turnos' },
-    { key: 'appointments:edit', label: 'Reprogramar / Editar Turnos' },
-    { key: 'appointments:checkin', label: 'Realizar Check-in de Clientes' },
-    { key: 'clients:view', label: 'Ver Fichas de Clientes' },
-    { key: 'clients:view_confidential_notes', label: 'Acceso a Notas Clínicas / Confidenciales' },
-    { key: 'clients:merge', label: 'Fusionar Registros de Clientes' },
-    { key: 'services:manage', label: 'Configurar Servicios y Recursos' },
-    { key: 'inventory:adjust', label: 'Ajustar Inventario y Stock' },
-    { key: 'sales:create', label: 'Realizar Cobros en POS' },
-    { key: 'cash:open_close', label: 'Apertura y Cierre de Caja' },
-    { key: 'team:manage', label: 'Invitar y Modificar Roles del Equipo' },
-    { key: 'org:settings', label: 'Ajustes Generales del Comercio' },
-    { key: 'audit:view', label: 'Auditoría y Trazabilidad' },
-  ];
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="bg-white dark:bg-[#201D1B] p-5 rounded-2xl border border-[#E8E2D8] dark:border-[#2D2825] shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div className="space-y-6 max-w-6xl mx-auto pb-12">
+      {/* Page Header */}
+      <div className="bg-white p-6 rounded-2xl border border-[#E8E2D8] shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-xl sm:text-2xl font-bold text-stone-900 dark:text-white tracking-tight">
-            Equipo & Matriz de Permisos (RBAC)
+          <div className="flex items-center gap-2">
+            <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wider bg-[#28634C]/10 text-[#28634C]">
+              Gestión de Personal
+            </span>
+          </div>
+          <h1 className="text-2xl font-bold text-[#24352C] tracking-tight mt-1">
+            Equipo & Accesos
           </h1>
-          <p className="text-xs text-stone-500 dark:text-stone-400 mt-1">
-            Gestión de profesionales, colaboradores e invitaciones de un solo uso con caducidad.
+          <p className="text-sm text-[#5E7166] mt-0.5">
+            Administrá a las personas que atienden en {currentOrg.name || 'tu negocio'} y definí sus roles de forma simple.
           </p>
         </div>
+
+        <button
+          type="button"
+          onClick={() => setShowModal(true)}
+          className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-[#28634C] hover:bg-[#1E4D3B] text-[#FAF8F2] font-semibold text-sm shadow-sm transition hover:shadow active:scale-98"
+        >
+          <UserPlus className="w-4 h-4" />
+          <span>+ Agregar Miembro</span>
+        </button>
       </div>
 
-      {/* Grid: Staff + Invite Generator */}
-      <div className="grid gap-6 lg:grid-cols-12">
-        {/* Team Members List (7 cols) */}
-        <div className="lg:col-span-7 bg-white dark:bg-[#201D1B] rounded-2xl border border-[#E8E2D8] dark:border-[#2D2825] shadow-xs p-5 space-y-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="font-bold text-sm text-stone-900 dark:text-white">
-                Profesionales & Trabajadores ({orgProfessionals.length})
-              </h2>
-              <span className="text-[11px] text-stone-400">Prestadores de servicio en {currentBranch.name}</span>
-            </div>
-            <button
-              type="button"
-              onClick={() => setShowNewProfModal(true)}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#335946] hover:bg-[#284637] text-white text-xs font-semibold shadow-xs transition"
-            >
-              <Plus className="w-3.5 h-3.5" />
-              <span>+ Agregar Trabajador</span>
-            </button>
+      {/* Explanation Banner: How Login Works */}
+      <div className="p-4 sm:p-5 rounded-2xl bg-[#FAF8F2] border border-[#E8CDA8]/60 shadow-xs flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+        <div className="flex items-start gap-3">
+          <div className="w-10 h-10 rounded-xl bg-[#28634C] text-[#FAF8F2] flex items-center justify-center shrink-0 shadow-xs">
+            <KeyRound className="w-5 h-5" />
           </div>
-
-          <div className="divide-y divide-[#F2ECE4] dark:divide-[#2D2825]">
-            {orgProfessionals.map((prof) => (
-              <div key={prof.id} className="py-3 flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div
-                    className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-white text-sm shadow-xs"
-                    style={{ backgroundColor: prof.color_tag }}
-                  >
-                    {prof.display_name.charAt(0)}
-                  </div>
-                  <div>
-                    <h4 className="font-bold text-sm text-stone-800 dark:text-stone-100">
-                      {prof.display_name}
-                    </h4>
-                    <p className="text-xs text-stone-400">{prof.specialty || 'Profesional de Servicio'}</p>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-3">
-                  <div className="text-right">
-                    <span className="px-2.5 py-0.5 rounded-lg text-[11px] font-semibold bg-[#EBF2EE] dark:bg-[#203026] text-[#2F4F3E] dark:text-[#A1CEB5] border border-[#D5E3DB] dark:border-[#2E4738]">
-                      Comisión: {prof.commission_rate_pct}%
-                    </span>
-                    <div className="text-[10px] text-stone-400 mt-0.5">
-                      {prof.is_public ? 'Visible en Turnero' : 'Solo Agenda Interna'}
-                    </div>
-                  </div>
-                  {orgProfessionals.length > 1 && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (window.confirm(`¿Eliminar al trabajador ${prof.display_name}?`)) {
-                          deleteProfessional(prof.id);
-                        }
-                      }}
-                      className="p-1.5 text-stone-300 hover:text-[#9E4B3E] rounded-lg transition"
-                      title="Eliminar trabajador"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-
-          <div className="mt-4 p-3 rounded-xl bg-[#FAF7F2] dark:bg-[#252220] border border-[#E8E2D8] dark:border-[#2D2825] text-xs space-y-1">
-            <span className="font-semibold text-stone-800 dark:text-stone-200">
-              💡 ¿Cómo se gestionan los trabajadores?
-            </span>
-            <p className="text-[11px] text-stone-500 dark:text-stone-400 leading-relaxed">
-              No necesitan registrarse con email ni crear contraseñas. Al agregarlos aquí, aparecen inmediatamente en la <strong>Agenda</strong> para asignar turnos, en el <strong>Turnero Web</strong> para que los clientes elijan con quién atenderse, y en el <strong>Módulo de Caja</strong> para liquidar sus comisiones.
+          <div className="space-y-1">
+            <h3 className="font-bold text-sm text-[#24352C]">
+              ¿Cómo entran al sistema tus colaboradores?
+            </h3>
+            <p className="text-xs text-[#5E7166] leading-relaxed max-w-2xl">
+              <strong>No es obligatorio tener Gmail ni cuentas complejas.</strong> Podés asignarles un simple <strong>usuario y contraseña</strong> (por ejemplo: usuario <code className="px-1.5 py-0.5 bg-white rounded border border-[#E8E2D8] font-mono text-[#24352C]">franco</code> y clave <code className="px-1.5 py-0.5 bg-white rounded border border-[#E8E2D8] font-mono text-[#24352C]">1234</code>) para que ingresen directo desde la pantalla de inicio en su celular o PC.
             </p>
           </div>
         </div>
 
-        {/* Single-use Invite Generator (5 cols) */}
-        <div className="lg:col-span-5 bg-white dark:bg-[#201D1B] rounded-2xl border border-[#E8E2D8] dark:border-[#2D2825] shadow-xs p-5 space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <UserPlus className="w-5 h-5 text-[#5E836F]" />
-              <h3 className="font-bold text-sm text-stone-900 dark:text-white">Invitar al Equipo</h3>
-            </div>
-            <Link
-              to="/admin/accounts"
-              className="text-[11px] text-[#5E836F] hover:underline flex items-center gap-1 font-semibold"
-            >
-              <Sliders className="w-3 h-3" />
-              <span>Configurar Roles</span>
-            </Link>
-          </div>
-
-          {currentOrg.account_config?.delegation_mode === 'single' ? (
-            <div className="p-4 rounded-xl bg-[#FAF7F2] dark:bg-[#252220] border border-[#E8E2D8] dark:border-[#2D2825] space-y-3">
-              <div className="flex items-center gap-2 text-[#C4894D] font-bold text-xs">
-                <ShieldCheck className="w-4 h-4" />
-                <span>Cuenta en Modo Mono-Rol (Operador Único)</span>
-              </div>
-              <p className="text-xs text-stone-600 dark:text-stone-300 leading-relaxed">
-                Esta cuenta está configurada por administración para operar con <strong>un solo titular</strong> sin jerarquías ni sub-delegación de roles (recepcionista, cajero, encargado).
-              </p>
-              <p className="text-[11px] text-stone-400">
-                Si este comercio necesita incorporar empleados con roles delegados, cambialo a <strong>Multi-Rol</strong> desde la consola de configuración de cuentas.
-              </p>
-              <Link
-                to="/admin/accounts"
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#5E836F] hover:bg-[#4E705D] text-white text-xs font-semibold shadow-xs transition"
-              >
-                <Sliders className="w-3.5 h-3.5" />
-                <span>Habilitar Delegación de Roles</span>
-              </Link>
-            </div>
-          ) : (
-            <>
-              <p className="text-xs text-stone-500">
-                Generá un enlace seguro de un solo uso que expirará en 48 horas:
-              </p>
-
-              <form onSubmit={handleGenerateInvite} className="space-y-3">
-                <div>
-                  <label className="block text-xs font-semibold text-stone-700 dark:text-stone-300 mb-1">
-                    Correo Electrónico
-                  </label>
-                  <input
-                    type="email"
-                    required
-                    value={inviteEmail}
-                    onChange={(e) => setInviteEmail(e.target.value)}
-                    placeholder="colaborador@comercio.com"
-                    className="w-full bg-[#FAF7F2] dark:bg-[#1A1817] border border-[#E4DDD2] dark:border-[#352F2B] rounded-xl px-3 py-2 text-xs text-stone-900 dark:text-white focus:outline-[#5E836F]"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-stone-700 dark:text-stone-300 mb-1">
-                    Rol a Asignar
-                  </label>
-                  <select
-                    value={inviteRole}
-                    onChange={(e) => setInviteRole(e.target.value as MemberRole)}
-                    className="w-full bg-[#FAF7F2] dark:bg-[#1A1817] border border-[#E4DDD2] dark:border-[#352F2B] rounded-xl px-3 py-2 text-xs text-stone-900 dark:text-white focus:outline-[#5E836F]"
-                  >
-                    {(currentOrg.account_config?.allowed_roles || [
-                      'admin',
-                      'branch_manager',
-                      'receptionist',
-                      'professional',
-                      'cashier',
-                    ])
-                      .filter((r) => r !== 'owner')
-                      .map((r) => {
-                        const labels: Record<string, string> = {
-                          admin: 'Administrador',
-                          branch_manager: 'Encargado de Sucursal',
-                          receptionist: 'Recepcionista',
-                          professional: 'Profesional',
-                          cashier: 'Cajero / Mostrador',
-                        };
-                        return (
-                          <option key={r} value={r}>
-                            {labels[r] || r}
-                          </option>
-                        );
-                      })}
-                  </select>
-                </div>
-
-                <button
-                  type="submit"
-                  className="w-full py-2.5 rounded-xl bg-[#5E836F] hover:bg-[#4E705D] text-white font-semibold text-xs shadow-xs transition"
-                >
-                  Generar Enlace de Invitación
-                </button>
-              </form>
-            </>
-          )}
-
-          {generatedInvite && (
-            <div className="p-3 bg-[#EBF2EE] dark:bg-[#203026] rounded-xl border border-[#D5E3DB] dark:border-[#2E4738] space-y-2">
-              <span className="text-[11px] font-bold text-[#2F4F3E] dark:text-[#A1CEB5] block">
-                Enlace seguro generado:
-              </span>
-              <div className="flex items-center gap-1">
-                <input
-                  type="text"
-                  readOnly
-                  value={generatedInvite}
-                  className="w-full bg-white dark:bg-[#1A1817] border border-[#D5E3DB] dark:border-[#2E4738] rounded-lg px-2 py-1 text-[11px] font-mono text-stone-800 dark:text-stone-200"
-                />
-                <button
-                  type="button"
-                  onClick={handleCopy}
-                  className="p-1.5 rounded-lg bg-[#5E836F] text-white hover:bg-[#4E705D] shrink-0 transition"
-                >
-                  {copied ? <Check className="w-3.5 h-3.5" /> : <Copy className="w-3.5 h-3.5" />}
-                </button>
-              </div>
-              <p className="text-[10px] text-stone-500">Vence en 48hs o tras su primer uso.</p>
-            </div>
-          )}
+        <div className="flex items-center gap-2 shrink-0">
+          <span className="text-[11px] font-semibold text-[#28634C] bg-white px-3 py-1.5 rounded-xl border border-[#E8CDA8]/70">
+            ✓ Sin correos que van a Spam
+          </span>
         </div>
       </div>
 
-      {/* RBAC PERMISSIONS MATRIX */}
-      <div className="bg-white dark:bg-[#201D1B] rounded-2xl border border-[#E8E2D8] dark:border-[#2D2825] shadow-xs overflow-hidden p-5 space-y-4">
+      {/* Summary KPI Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="bg-white p-4 rounded-xl border border-[#E8E2D8] shadow-xs">
+          <div className="text-xs font-semibold text-[#5E7166]">Total del Equipo</div>
+          <div className="text-2xl font-bold text-[#24352C] mt-1">{orgProfessionals.length}</div>
+          <div className="text-[11px] text-[#5E7166] mt-0.5">Colaboradores registrados</div>
+        </div>
+        <div className="bg-white p-4 rounded-xl border border-[#E8E2D8] shadow-xs">
+          <div className="text-xs font-semibold text-[#5E7166]">Visibles en Turnero Web</div>
+          <div className="text-2xl font-bold text-[#28634C] mt-1">
+            {orgProfessionals.filter((p) => p.is_public).length}
+          </div>
+          <div className="text-[11px] text-[#5E7166] mt-0.5">Disponibles para reserva online</div>
+        </div>
+        <div className="bg-white p-4 rounded-xl border border-[#E8E2D8] shadow-xs">
+          <div className="text-xs font-semibold text-[#5E7166]">Sucursal Activa</div>
+          <div className="text-base font-bold text-[#24352C] mt-1 truncate">
+            {currentBranch.name || 'Sucursal Principal'}
+          </div>
+          <div className="text-[11px] text-[#5E7166] mt-0.5">Asignación automática de agenda</div>
+        </div>
+      </div>
+
+      {/* Team Member Cards Grid */}
+      <div className="bg-white rounded-2xl border border-[#E8E2D8] shadow-xs overflow-hidden">
+        <div className="p-5 border-b border-[#E8E2D8] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <h2 className="font-bold text-base text-[#24352C]">Miembros del Equipo</h2>
+            <p className="text-xs text-[#5E7166]">Personal que atiende o gestiona el establecimiento</p>
+          </div>
+
+          <div className="flex items-center gap-1.5 bg-[#FAF8F2] p-1 rounded-xl border border-[#E8E2D8]">
+            <button
+              type="button"
+              onClick={() => setActiveTab('all')}
+              className={`px-3 py-1 text-xs font-semibold rounded-lg transition ${
+                activeTab === 'all'
+                  ? 'bg-[#28634C] text-[#FAF8F2] shadow-xs'
+                  : 'text-[#5E7166] hover:text-[#24352C]'
+              }`}
+            >
+              Todos ({orgProfessionals.length})
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab('professional')}
+              className={`px-3 py-1 text-xs font-semibold rounded-lg transition ${
+                activeTab === 'professional'
+                  ? 'bg-[#28634C] text-[#FAF8F2] shadow-xs'
+                  : 'text-[#5E7166] hover:text-[#24352C]'
+              }`}
+            >
+              Profesionales
+            </button>
+          </div>
+        </div>
+
+        {filteredList.length === 0 ? (
+          <div className="p-12 text-center">
+            <Users className="w-12 h-12 text-stone-300 mx-auto mb-3" />
+            <h3 className="font-bold text-base text-[#24352C]">No hay miembros registrados</h3>
+            <p className="text-xs text-[#5E7166] mt-1 max-w-sm mx-auto">
+              Comenzá agregando a tu primer colaborador para que aparezca en el calendario y en el turnero online.
+            </p>
+            <button
+              type="button"
+              onClick={() => setShowModal(true)}
+              className="mt-4 inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#28634C] text-white text-xs font-semibold shadow-xs"
+            >
+              <UserPlus className="w-3.5 h-3.5" />
+              <span>+ Agregar primer miembro</span>
+            </button>
+          </div>
+        ) : (
+          <div className="divide-y divide-[#E8E2D8]">
+            {filteredList.map((prof) => {
+              const linkedUser = getLinkedProfile(prof);
+              return (
+                <div
+                  key={prof.id}
+                  className="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 hover:bg-[#FAF8F2]/50 transition"
+                >
+                  {/* Left: Avatar & Info */}
+                  <div className="flex items-center gap-3.5">
+                    <div
+                      className="w-12 h-12 rounded-2xl flex items-center justify-center font-bold text-white text-base shadow-xs shrink-0"
+                      style={{ backgroundColor: prof.color_tag || '#28634C' }}
+                    >
+                      {prof.display_name.charAt(0).toUpperCase()}
+                    </div>
+
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <h3 className="font-bold text-sm text-[#24352C]">{prof.display_name}</h3>
+                        {renderRoleBadge(linkedUser?.is_superadmin ? 'admin' : 'professional')}
+                      </div>
+                      <p className="text-xs text-[#5E7166] mt-0.5">
+                        {prof.specialty || 'Profesional de Servicio'}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Middle: Details & Badges */}
+                  <div className="flex flex-wrap items-center gap-3 sm:gap-6 text-xs text-[#5E7166]">
+                    <div className="flex items-center gap-1.5">
+                      <DollarSign className="w-3.5 h-3.5 text-[#28634C]" />
+                      <span>Comisión:</span>
+                      <strong className="text-[#24352C] font-semibold">{prof.commission_rate_pct}%</strong>
+                    </div>
+
+                    <div className="flex items-center gap-1.5">
+                      <Globe className="w-3.5 h-3.5 text-[#28634C]" />
+                      <span>Turnero Web:</span>
+                      <span
+                        className={`font-semibold ${
+                          prof.is_public ? 'text-[#28634C]' : 'text-stone-400'
+                        }`}
+                      >
+                        {prof.is_public ? 'Visible' : 'Oculto'}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-1.5">
+                      <Lock className="w-3.5 h-3.5 text-[#28634C]" />
+                      <span>Acceso:</span>
+                      {linkedUser ? (
+                        <span className="font-mono text-[#24352C] bg-white px-2 py-0.5 rounded border border-[#E8E2D8] text-[11px]">
+                          @{linkedUser.username}
+                        </span>
+                      ) : (
+                        <span className="text-stone-400 text-[11px]">Solo prestador</span>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Right: Actions */}
+                  <div className="flex items-center justify-end gap-2 pt-2 sm:pt-0 border-t sm:border-0 border-[#E8E2D8]">
+                    {orgProfessionals.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (window.confirm(`¿Seguro que deseás eliminar a ${prof.display_name}?`)) {
+                            deleteProfessional(prof.id);
+                          }
+                        }}
+                        className="p-2 text-stone-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition"
+                        title="Eliminar miembro"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* Simplified Roles Guide: 3 Clear Roles */}
+      <div className="bg-white rounded-2xl border border-[#E8E2D8] shadow-xs p-6 space-y-4">
         <div>
-          <h2 className="font-bold text-sm text-stone-900 dark:text-white">
-            Matriz de Autorización por Rol (RBAC)
+          <h2 className="font-bold text-base text-[#24352C] flex items-center gap-2">
+            <Sparkles className="w-4 h-4 text-[#28634C]" />
+            Guía Simple de Roles
           </h2>
-          <p className="text-xs text-stone-500 mt-0.5">
-            Comprobación estricta de permisos tanto en backend/PostgreSQL como en la interfaz.
+          <p className="text-xs text-[#5E7166] mt-0.5">
+            Solo 3 roles claros y directos para que la gestión de tu negocio sea ordenada y sin complicaciones:
           </p>
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
-            <thead className="bg-[#FAF7F2] dark:bg-[#282421] text-stone-500 font-bold border-b border-[#E8E2D8] dark:border-[#2D2825]">
-              <tr>
-                <th className="px-4 py-3">Permiso / Operación</th>
-                <th className="px-3 py-3 text-center">Owner</th>
-                <th className="px-3 py-3 text-center">Admin</th>
-                <th className="px-3 py-3 text-center">Encargado</th>
-                <th className="px-3 py-3 text-center">Recepción</th>
-                <th className="px-3 py-3 text-center">Profesional</th>
-                <th className="px-3 py-3 text-center">Cajero</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-[#F2ECE4] dark:divide-[#2D2825]">
-              {allPermissions.map((perm) => (
-                <tr key={perm.key} className="hover:bg-[#FAF7F2]/60 dark:hover:bg-[#282421]/40">
-                  <td className="px-4 py-2.5 font-medium text-stone-800 dark:text-stone-200">
-                    {perm.label}
-                  </td>
-                  {(['owner', 'admin', 'branch_manager', 'receptionist', 'professional', 'cashier'] as MemberRole[]).map(
-                    (role) => {
-                      const hasPerm = ROLE_PERMISSIONS[role]?.includes(perm.key);
-                      return (
-                        <td key={role} className="px-3 py-2.5 text-center">
-                          {hasPerm ? (
-                            <span className="inline-block w-4 h-4 rounded-full bg-[#5E836F] text-white font-bold text-[10px] leading-4">
-                              ✓
-                            </span>
-                          ) : (
-                            <span className="inline-block w-4 h-4 rounded-full bg-[#E8E2D8] dark:bg-[#352F2B] text-stone-400 text-[10px] leading-4">
-                              ✕
-                            </span>
-                          )}
-                        </td>
-                      );
-                    }
-                  )}
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {/* Role 1: Dueño */}
+          <div className="p-4 rounded-xl bg-[#FAF8F2] border border-[#E8CDA8]/60 space-y-2">
+            <div className="flex items-center gap-2">
+              <div className="w-7 h-7 rounded-lg bg-[#28634C] text-[#FAF8F2] flex items-center justify-center font-bold text-xs">
+                👑
+              </div>
+              <h3 className="font-bold text-sm text-[#24352C]">Dueño / Administrador</h3>
+            </div>
+            <p className="text-xs text-[#5E7166] leading-relaxed">
+              Control total del negocio. Puede ver la caja, reportes de facturación, modificar precios, servicios y gestionar el equipo.
+            </p>
+            <div className="pt-2 border-t border-[#E8CDA8]/40 text-[11px] font-semibold text-[#28634C]">
+              ✓ Acceso a todo el sistema
+            </div>
+          </div>
+
+          {/* Role 2: Profesional */}
+          <div className="p-4 rounded-xl bg-[#FAF8F2] border border-[#E8E2D8] space-y-2">
+            <div className="flex items-center gap-2">
+              <div className="w-7 h-7 rounded-lg bg-[#28634C]/15 text-[#28634C] flex items-center justify-center font-bold text-xs">
+                ✂️
+              </div>
+              <h3 className="font-bold text-sm text-[#24352C]">Profesional / Barbero</h3>
+            </div>
+            <p className="text-xs text-[#5E7166] leading-relaxed">
+              Enfocado en la atención. Ve únicamente sus propios turnos asignados en la agenda, atiende clientes y consulta sus comisiones ganadas.
+            </p>
+            <div className="pt-2 border-t border-[#E8E2D8] text-[11px] font-semibold text-[#28634C]">
+              ✓ Agenda personal y turnos propios
+            </div>
+          </div>
+
+          {/* Role 3: Recepción */}
+          <div className="p-4 rounded-xl bg-[#FAF8F2] border border-[#E8E2D8] space-y-2">
+            <div className="flex items-center gap-2">
+              <div className="w-7 h-7 rounded-lg bg-blue-100 text-blue-800 flex items-center justify-center font-bold text-xs">
+                🛎️
+              </div>
+              <h3 className="font-bold text-sm text-[#24352C]">Recepción / Mostrador</h3>
+            </div>
+            <p className="text-xs text-[#5E7166] leading-relaxed">
+              Atención al público en mostrador. Puede agendar turnos para cualquier profesional, recibir clientes y cobrar en caja sin ver datos sensibles.
+            </p>
+            <div className="pt-2 border-t border-[#E8E2D8] text-[11px] font-semibold text-blue-700">
+              ✓ Cobros y agenda general
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* Modal: New Professional / Worker */}
-      {showNewProfModal && (
+      {/* Modal: Add Team Member */}
+      {showModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-stone-900/60 backdrop-blur-xs">
-          <div className="bg-white dark:bg-[#201D1B] rounded-2xl max-w-md w-full border border-[#E0D8CC] dark:border-[#352F2B] shadow-2xl p-6 space-y-4 animate-in fade-in zoom-in-95 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between pb-3 border-b border-[#E8E2D8] dark:border-[#2D2825]">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-xl bg-[#EBF2EE] dark:bg-[#25382D] text-[#335946] dark:text-[#A1CEB5] flex items-center justify-center">
-                  <UserPlus className="w-4 h-4" />
+          <div className="bg-white rounded-2xl max-w-lg w-full border border-[#E8E2D8] shadow-2xl p-6 space-y-5 animate-in fade-in zoom-in-95 max-h-[90vh] overflow-y-auto">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between pb-3 border-b border-[#E8E2D8]">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-[#28634C]/10 text-[#28634C] flex items-center justify-center">
+                  <UserPlus className="w-5 h-5" />
                 </div>
-                <h3 className="font-bold text-base text-stone-900 dark:text-white">
-                  Agregar Nuevo Trabajador
-                </h3>
+                <div>
+                  <h3 className="font-bold text-base text-[#24352C]">Nuevo Miembro del Equipo</h3>
+                  <p className="text-xs text-[#5E7166]">Completá los datos básicos del colaborador</p>
+                </div>
               </div>
               <button
                 type="button"
-                onClick={() => setShowNewProfModal(false)}
-                className="text-stone-400 hover:text-stone-600 dark:hover:text-stone-200"
+                onClick={() => setShowModal(false)}
+                className="text-stone-400 hover:text-stone-600 transition p-1 rounded-lg"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <form onSubmit={handleCreateProfessional} className="space-y-4">
+            <form onSubmit={handleCreateMember} className="space-y-4">
+              {/* Name */}
               <div>
-                <label className="block text-xs font-semibold text-stone-700 dark:text-stone-300 mb-1">
-                  Nombre Completo o Apodo *
+                <label className="block text-xs font-semibold text-[#24352C] mb-1">
+                  Nombre Completo *
                 </label>
                 <input
                   type="text"
                   required
-                  value={newProfName}
-                  onChange={(e) => setNewProfName(e.target.value)}
-                  placeholder="Ej. Lucas, Franco, Valentina"
-                  className="w-full bg-[#FAF7F2] dark:bg-[#1A1817] border border-[#E4DDD2] dark:border-[#352F2B] rounded-xl px-3 py-2 text-xs text-stone-900 dark:text-white focus:outline-[#335946]"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="Ej. Lucas Fernández, Franco Gómez"
+                  className="w-full bg-[#FAF8F2] border border-[#E8E2D8] rounded-xl px-3.5 py-2.5 text-xs text-[#24352C] focus:outline-none focus:border-[#28634C] focus:ring-1 focus:ring-[#28634C]"
                 />
               </div>
 
+              {/* Role Selection */}
               <div>
-                <label className="block text-xs font-semibold text-stone-700 dark:text-stone-300 mb-1">
-                  Puesto o Especialidad
+                <label className="block text-xs font-semibold text-[#24352C] mb-1.5">
+                  Rol en el Negocio *
+                </label>
+                <div className="grid grid-cols-3 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setRole('professional');
+                      setIsPublic(true);
+                    }}
+                    className={`p-3 rounded-xl border text-left transition flex flex-col justify-between ${
+                      role === 'professional'
+                        ? 'border-[#28634C] bg-[#28634C]/5 text-[#24352C]'
+                        : 'border-[#E8E2D8] bg-[#FAF8F2] text-[#5E7166] hover:bg-white'
+                    }`}
+                  >
+                    <span className="text-base">✂️</span>
+                    <span className="font-bold text-xs mt-1 block">Profesional</span>
+                    <span className="text-[10px] text-[#5E7166] mt-0.5">Atiende turnos</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setRole('receptionist');
+                      setIsPublic(false);
+                      setCommission(0);
+                    }}
+                    className={`p-3 rounded-xl border text-left transition flex flex-col justify-between ${
+                      role === 'receptionist'
+                        ? 'border-blue-500 bg-blue-50/50 text-[#24352C]'
+                        : 'border-[#E8E2D8] bg-[#FAF8F2] text-[#5E7166] hover:bg-white'
+                    }`}
+                  >
+                    <span className="text-base">🛎️</span>
+                    <span className="font-bold text-xs mt-1 block">Recepción</span>
+                    <span className="text-[10px] text-[#5E7166] mt-0.5">Mostrador</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setRole('admin');
+                      setIsPublic(false);
+                    }}
+                    className={`p-3 rounded-xl border text-left transition flex flex-col justify-between ${
+                      role === 'admin'
+                        ? 'border-[#C4894D] bg-[#E8CDA8]/20 text-[#24352C]'
+                        : 'border-[#E8E2D8] bg-[#FAF8F2] text-[#5E7166] hover:bg-white'
+                    }`}
+                  >
+                    <span className="text-base">👑</span>
+                    <span className="font-bold text-xs mt-1 block">Admin</span>
+                    <span className="text-[10px] text-[#5E7166] mt-0.5">Control total</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Specialty */}
+              <div>
+                <label className="block text-xs font-semibold text-[#24352C] mb-1">
+                  Especialidad / Puesto
                 </label>
                 <input
                   type="text"
-                  value={newProfSpecialty}
-                  onChange={(e) => setNewProfSpecialty(e.target.value)}
-                  placeholder="Ej. Barbero Senior, Colorista, Manicura"
-                  className="w-full bg-[#FAF7F2] dark:bg-[#1A1817] border border-[#E4DDD2] dark:border-[#352F2B] rounded-xl px-3 py-2 text-xs text-stone-900 dark:text-white focus:outline-[#335946]"
+                  value={specialty}
+                  onChange={(e) => setSpecialty(e.target.value)}
+                  placeholder={
+                    role === 'receptionist'
+                      ? 'Ej. Recepcionista, Secretaria'
+                      : role === 'admin'
+                      ? 'Ej. Encargado de Sucursal, Socio'
+                      : 'Ej. Barbero Senior, Colorista, Manicura'
+                  }
+                  className="w-full bg-[#FAF8F2] border border-[#E8E2D8] rounded-xl px-3.5 py-2.5 text-xs text-[#24352C] focus:outline-none focus:border-[#28634C]"
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-semibold text-stone-700 dark:text-stone-300 mb-1">
-                    Comisión (% por servicio)
-                  </label>
+              {/* Commission & Color (for professionals) */}
+              {role === 'professional' && (
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-semibold text-[#24352C] mb-1">
+                      Comisión (% por servicio)
+                    </label>
+                    <input
+                      type="number"
+                      min={0}
+                      max={100}
+                      value={commission}
+                      onChange={(e) => setCommission(Number(e.target.value))}
+                      className="w-full bg-[#FAF8F2] border border-[#E8E2D8] rounded-xl px-3.5 py-2.5 text-xs text-[#24352C] focus:outline-none focus:border-[#28634C]"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-[#24352C] mb-1">
+                      Color en la Agenda
+                    </label>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="color"
+                        value={color}
+                        onChange={(e) => setColor(e.target.value)}
+                        className="w-9 h-9 rounded-xl cursor-pointer border border-[#E8E2D8] p-0.5 bg-white"
+                      />
+                      <span className="text-xs font-mono text-[#5E7166]">{color}</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Web Booking Visibility */}
+              {role === 'professional' && (
+                <div className="flex items-center justify-between p-3.5 rounded-xl bg-[#FAF8F2] border border-[#E8E2D8]">
+                  <div>
+                    <div className="text-xs font-semibold text-[#24352C]">
+                      ¿Visible en el Turnero Web?
+                    </div>
+                    <div className="text-[11px] text-[#5E7166]">
+                      Permite que tus clientes elijan a este profesional al reservar online.
+                    </div>
+                  </div>
                   <input
-                    type="number"
-                    min={0}
-                    max={100}
-                    value={newProfCommission}
-                    onChange={(e) => setNewProfCommission(Number(e.target.value))}
-                    className="w-full bg-[#FAF7F2] dark:bg-[#1A1817] border border-[#E4DDD2] dark:border-[#352F2B] rounded-xl px-3 py-2 text-xs text-stone-900 dark:text-white focus:outline-[#335946]"
+                    type="checkbox"
+                    checked={isPublic}
+                    onChange={(e) => setIsPublic(e.target.checked)}
+                    className="w-4 h-4 accent-[#28634C] rounded cursor-pointer"
+                  />
+                </div>
+              )}
+
+              {/* Optional Login Account */}
+              <div className="p-4 rounded-xl bg-[#FAF8F2] border border-[#E8CDA8]/70 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="text-xs font-bold text-[#24352C] flex items-center gap-1.5">
+                      <KeyRound className="w-3.5 h-3.5 text-[#28634C]" />
+                      Crear datos de acceso (Opcional)
+                    </div>
+                    <p className="text-[11px] text-[#5E7166]">
+                      Habilita a este colaborador para que ingrese a TurnoPro con su usuario
+                    </p>
+                  </div>
+                  <input
+                    type="checkbox"
+                    checked={enableLogin}
+                    onChange={(e) => setEnableLogin(e.target.checked)}
+                    className="w-4 h-4 accent-[#28634C] rounded cursor-pointer"
                   />
                 </div>
 
-                <div>
-                  <label className="block text-xs font-semibold text-stone-700 dark:text-stone-300 mb-1">
-                    Color en la Agenda
-                  </label>
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="color"
-                      value={newProfColor}
-                      onChange={(e) => setNewProfColor(e.target.value)}
-                      className="w-8 h-8 rounded-lg cursor-pointer border border-[#E4DDD2] p-0.5"
-                    />
-                    <span className="text-xs text-stone-500 font-mono">{newProfColor}</span>
+                {enableLogin && (
+                  <div className="grid grid-cols-2 gap-3 pt-2 border-t border-[#E8CDA8]/40 animate-in fade-in">
+                    <div>
+                      <label className="block text-[11px] font-semibold text-[#24352C] mb-1">
+                        Nombre de Usuario
+                      </label>
+                      <input
+                        type="text"
+                        required={enableLogin}
+                        value={username}
+                        onChange={(e) => setUsername(e.target.value)}
+                        placeholder="Ej. lucas"
+                        className="w-full bg-white border border-[#E8E2D8] rounded-xl px-3 py-2 text-xs text-[#24352C] focus:outline-none focus:border-[#28634C]"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[11px] font-semibold text-[#24352C] mb-1">
+                        Contraseña
+                      </label>
+                      <input
+                        type="text"
+                        required={enableLogin}
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        placeholder="Ej. 123456"
+                        className="w-full bg-white border border-[#E8E2D8] rounded-xl px-3 py-2 text-xs text-[#24352C] focus:outline-none focus:border-[#28634C]"
+                      />
+                    </div>
+                    <p className="col-span-2 text-[10px] text-[#5E7166]">
+                      💡 Ingresará en la pantalla de inicio con este usuario y contraseña. No necesita Gmail.
+                    </p>
                   </div>
-                </div>
+                )}
               </div>
 
-              <div className="flex items-center justify-between p-3 rounded-xl bg-[#FAF7F2] dark:bg-[#1A1817] border border-[#E4DDD2] dark:border-[#352F2B]">
-                <div>
-                  <div className="text-xs font-semibold text-stone-800 dark:text-stone-200">
-                    ¿Visible en Turnero Web?
-                  </div>
-                  <div className="text-[11px] text-stone-500">
-                    Permite que los clientes reserven con él directamente
-                  </div>
-                </div>
-                <input
-                  type="checkbox"
-                  checked={newProfIsPublic}
-                  onChange={(e) => setNewProfIsPublic(e.target.checked)}
-                  className="w-4 h-4 accent-[#335946] rounded cursor-pointer"
-                />
-              </div>
-
-              <div className="flex justify-end gap-2 pt-3 border-t border-[#E8E2D8] dark:border-[#2D2825]">
+              {/* Actions */}
+              <div className="flex justify-end gap-2.5 pt-3 border-t border-[#E8E2D8]">
                 <button
                   type="button"
-                  onClick={() => setShowNewProfModal(false)}
-                  className="px-4 py-2 rounded-xl border border-[#E4DDD2] dark:border-[#352F2B] text-xs font-semibold text-stone-600 dark:text-stone-300 hover:bg-[#F7F3EC] dark:hover:bg-[#282421] transition"
+                  onClick={() => setShowModal(false)}
+                  className="px-4 py-2.5 rounded-xl border border-[#E8E2D8] text-xs font-semibold text-[#5E7166] hover:bg-[#FAF8F2] transition"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 rounded-xl bg-[#335946] hover:bg-[#284637] text-white text-xs font-bold shadow-xs transition"
+                  className="px-5 py-2.5 rounded-xl bg-[#28634C] hover:bg-[#1E4D3B] text-[#FAF8F2] text-xs font-bold shadow-xs transition"
                 >
-                  Guardar Trabajador
+                  Guardar Miembro
                 </button>
               </div>
             </form>

@@ -102,6 +102,9 @@ interface TenantContextType {
     commissionRatePct?: number;
     colorTag?: string;
     isPublic?: boolean;
+    role?: MemberRole;
+    username?: string;
+    password?: string;
   }) => Professional;
   deleteProfessional: (profId: string) => { success: boolean; message?: string };
 
@@ -1121,14 +1124,47 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     commissionRatePct?: number;
     colorTag?: string;
     isPublic?: boolean;
+    role?: MemberRole;
+    username?: string;
+    password?: string;
   }) => {
+    let memberId: string | undefined = undefined;
+    if (data.username && data.username.trim()) {
+      const cleanUsername = data.username.trim().toLowerCase();
+      const newUserId = `user-${Date.now()}`;
+      const newProfile: Profile = {
+        id: newUserId,
+        email: `${cleanUsername}@${currentOrg.slug || 'turnopro'}.internal`,
+        full_name: data.displayName,
+        username: cleanUsername,
+        password: data.password || '123456',
+        avatar_url: undefined,
+        phone: undefined,
+        is_superadmin: false,
+        created_at: new Date().toISOString(),
+      };
+      const newMember: OrganizationMember = {
+        id: `mem-${Date.now()}`,
+        organization_id: currentOrg.id,
+        user_id: newUserId,
+        role: data.role || 'professional',
+        branch_ids: [currentBranch.id],
+        is_active: true,
+        created_at: new Date().toISOString(),
+      };
+      setProfiles((prev) => [...prev, newProfile]);
+      setMemberships((prev) => [...prev, newMember]);
+      memberId = newMember.id;
+    }
+
     const newProf: Professional = {
       id: `prof-${Date.now()}`,
       organization_id: currentOrg.id,
+      member_id: memberId,
       display_name: data.displayName,
       specialty: data.specialty || 'Profesional de Servicio',
       commission_rate_pct: data.commissionRatePct ?? 50,
-      color_tag: data.colorTag || '#2A5C43',
+      color_tag: data.colorTag || '#28634C',
       is_public: data.isPublic ?? true,
       is_active: true,
       branch_ids: [currentBranch.id],
