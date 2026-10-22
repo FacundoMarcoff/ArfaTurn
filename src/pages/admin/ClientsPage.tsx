@@ -15,6 +15,7 @@ import {
   ChevronRight,
   Clock,
   CheckCircle2,
+  Edit,
 } from 'lucide-react';
 import { useTenant } from '../../lib/store/tenant-context';
 import { Customer } from '../../types/database.types';
@@ -26,6 +27,7 @@ export const ClientsPage: React.FC = () => {
     currentRole,
     customers,
     appointments,
+    services,
     sales,
     createCustomer,
     updateCustomer,
@@ -213,7 +215,7 @@ export const ClientsPage: React.FC = () => {
                   {activeHighlightedCustomer.full_name}
                 </h4>
                 <p className="text-xs text-[#5E7166]">
-                  {activeHighlightedCustomer.total_appointments} visitas · <strong className="text-[#24352C]">${activeHighlightedCustomer.total_spent.toLocaleString()}</strong> consumidos
+                  {activeHighlightedCustomer.total_appointments || 0} visitas · <strong className="text-[#24352C]">${(activeHighlightedCustomer.total_spent || 0).toLocaleString()}</strong> consumidos
                 </p>
               </div>
             </div>
@@ -322,10 +324,10 @@ export const ClientsPage: React.FC = () => {
                             {cust.phone}
                           </td>
                           <td className="px-3 py-3 text-center text-[#24352C] font-semibold">
-                            {cust.total_appointments}
+                            {cust.total_appointments || 0}
                           </td>
                           <td className="px-4 py-3 text-right font-bold text-[#24352C] tabular-nums">
-                            ${cust.total_spent.toLocaleString()}
+                            ${(cust.total_spent || 0).toLocaleString()}
                           </td>
                           <td className="px-3 py-3 text-[#5E7166]">
                             <ChevronRight className="w-4 h-4" />
@@ -392,14 +394,14 @@ export const ClientsPage: React.FC = () => {
                   <div className="grid grid-cols-2 gap-3 pt-1">
                     <div className="bg-[#FAF8F2] border border-[#E8E2D8] p-3 rounded-xl text-center">
                       <span className="block text-2xl font-extrabold text-[#24352C] tabular-nums">
-                        {activeCust.total_appointments}
+                        {activeCust.total_appointments || 0}
                       </span>
                       <span className="text-[11px] text-[#5E7166] font-medium">visitas</span>
                     </div>
 
                     <div className="bg-[#FAF8F2] border border-[#E8E2D8] p-3 rounded-xl text-center">
                       <span className="block text-2xl font-extrabold text-[#24352C] tabular-nums">
-                        ${activeCust.total_spent.toLocaleString()}
+                        ${(activeCust.total_spent || 0).toLocaleString()}
                       </span>
                       <span className="text-[11px] text-[#5E7166] font-medium">total consumido</span>
                     </div>
