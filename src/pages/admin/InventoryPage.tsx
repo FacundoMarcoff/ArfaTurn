@@ -10,6 +10,10 @@ import {
   Search,
   CheckCircle,
   X,
+  MoreVertical,
+  Sliders,
+  ChevronDown,
+  ShieldAlert,
 } from 'lucide-react';
 import { useTenant } from '../../lib/store/tenant-context';
 import { StockMovementType, Product } from '../../types/database.types';
@@ -25,6 +29,14 @@ export const InventoryPage: React.FC = () => {
 
   const [activeTab, setActiveTab] = useState<'products' | 'movements'>('products');
   const [searchQuery, setSearchQuery] = useState('');
+  const [filterLowStock, setFilterLowStock] = useState(false);
+  const [showNewProductModal, setShowNewProductModal] = useState(false);
+  const [newProdName, setNewProdName] = useState('');
+  const [newProdSku, setNewProdSku] = useState('');
+  const [newProdCost, setNewProdCost] = useState(5000);
+  const [newProdPrice, setNewProdPrice] = useState(10000);
+  const [newProdStock, setNewProdStock] = useState(10);
+  const [newProdMinStock, setNewProdMinStock] = useState(3);
   const [showMovementModal, setShowMovementModal] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
 
@@ -38,220 +50,227 @@ export const InventoryPage: React.FC = () => {
     if (p.organization_id !== currentOrg.id) return false;
     if (!searchQuery) return true;
     const q = searchQuery.toLowerCase();
-    return (
-      p.name.toLowerCase().includes(q) ||
-      (p.sku && p.sku.toLowerCase().includes(q)) ||
-      (p.barcode && p.barcode.includes(q))
-    );
+    return p.name.toLowerCase().includes(q) || (p.sku && p.sku.toLowerCase().includes(q));
   });
 
-  const orgMovements = stockMovements.filter((m) => m.organization_id === currentOrg.id);
-
-  const handleRecordMovement = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedProduct) return;
-
-    // Negate quantity if it's an outgoing movement
-    const finalQty =
-      ['sale_out', 'service_consumption', 'adjustment_out', 'transfer_out'].includes(movementType)
-        ? -Math.abs(quantity)
-        : Math.abs(quantity);
-
-    const res = recordStockMovement({
-      productId: selectedProduct.id,
-      branchId: currentBranch.id,
-      movementType,
-      quantity: finalQty,
-      reason: reason.trim(),
-    });
-
-    if (res.success) {
-      setAlertMsg({ type: 'success', text: 'Movimiento de stock registrado y auditado correctamente.' });
-      setShowMovementModal(false);
-      setSelectedProduct(null);
-      setQuantity(1);
-      setReason('');
-    } else {
-      setAlertMsg({ type: 'error', text: res.message || 'Error al actualizar stock.' });
-    }
-  };
-
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white dark:bg-[#201D1B] p-5 rounded-2xl border border-[#E8E2D8] dark:border-[#2D2825] shadow-xs">
-        <div>
-          <h1 className="text-xl sm:text-2xl font-bold text-stone-900 dark:text-white tracking-tight">
-            Inventario & Control de Stock
-          </h1>
-          <p className="text-xs text-stone-500 dark:text-stone-400 mt-1">
-            Gestión auditada de existencias por sucursal, alertas de stock mínimo y trazabilidad de movimientos.
-          </p>
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-extrabold text-[#24352C] tracking-tight">
+          Productos y stock
+        </h1>
+
+        <button
+          type="button"
+          onClick={() => setShowNewProductModal(true)}
+          className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#28634C] hover:bg-[#1E4E3B] text-white text-xs font-bold shadow-xs transition cursor-pointer"
+        >
+          <Plus className="w-4 h-4 text-[#E8CDA8]" />
+          <span>+ Nuevo producto</span>
+        </button>
+      </div>
+
+      {/* Toolbar */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-1">
+        {/* Pills */}
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setActiveTab('products')}
+            className={`px-4 py-2 rounded-xl text-xs font-bold transition cursor-pointer ${
+              activeTab === 'products'
+                ? 'bg-[#EAF2EC] text-[#28634C] shadow-2xs'
+                : 'bg-white text-[#5E7166] border border-[#CCD6D0] hover:bg-[#FAF8F2]'
+            }`}
+          >
+            Productos ({orgProducts.length})
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('movements')}
+            className={`px-4 py-2 rounded-xl text-xs font-bold transition cursor-pointer ${
+              activeTab === 'movements'
+                ? 'bg-[#EAF2EC] text-[#28634C] shadow-2xs'
+                : 'bg-white text-[#5E7166] border border-[#CCD6D0] hover:bg-[#FAF8F2]'
+            }`}
+          >
+            Movimientos
+          </button>
         </div>
 
-        <div className="flex items-center gap-2">
-          <div className="flex bg-[#FAF7F2] dark:bg-[#282421] p-1 rounded-xl text-xs font-semibold border border-[#E8E2D8] dark:border-[#352F2B]">
-            <button
-              onClick={() => setActiveTab('products')}
-              className={`px-3 py-1.5 rounded-lg transition ${
-                activeTab === 'products'
-                  ? 'bg-white dark:bg-[#201D1B] text-[#335946] dark:text-[#A1CEB5] shadow-xs font-bold'
-                  : 'text-stone-600 dark:text-stone-400 hover:text-stone-900'
-              }`}
-            >
-              Productos ({orgProducts.length})
-            </button>
-            <button
-              onClick={() => setActiveTab('movements')}
-              className={`px-3 py-1.5 rounded-lg transition ${
-                activeTab === 'movements'
-                  ? 'bg-white dark:bg-[#201D1B] text-[#335946] dark:text-[#A1CEB5] shadow-xs font-bold'
-                  : 'text-stone-600 dark:text-stone-400 hover:text-stone-900'
-              }`}
-            >
-              Movimientos Auditados ({orgMovements.length})
-            </button>
+        {/* Search & Filters */}
+        <div className="flex items-center gap-2 flex-wrap">
+          <div className="relative w-full sm:w-64">
+            <Search className="w-4 h-4 text-[#5E7166] absolute left-3 top-1/2 -translate-y-1/2" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Buscar por nombre, SKU o código"
+              className="w-full pl-9 pr-3.5 py-2 bg-white border border-[#CCD6D0] rounded-xl text-xs text-[#24352C] placeholder-[#5E7166]/70 focus:outline-[#28634C] shadow-2xs"
+            />
           </div>
+
+          <div className="relative">
+            <select
+              className="bg-white border border-[#CCD6D0] text-xs font-semibold rounded-xl pl-3 pr-8 py-2 text-[#24352C] appearance-none focus:outline-[#28634C] shadow-2xs cursor-pointer"
+            >
+              <option value="all">Todos</option>
+            </select>
+            <ChevronDown className="w-3.5 h-3.5 text-[#5E7166] absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+          </div>
+
+          <button
+            type="button"
+            onClick={() => setFilterLowStock(!filterLowStock)}
+            className={`flex items-center gap-1.5 px-3 py-2 rounded-xl border text-xs font-semibold transition cursor-pointer shadow-2xs ${
+              filterLowStock
+                ? 'bg-amber-100 border-amber-300 text-amber-900 font-bold'
+                : 'bg-white border-[#CCD6D0] text-[#24352C] hover:bg-[#FAF8F2]'
+            }`}
+          >
+            <ShieldAlert className="w-3.5 h-3.5 text-amber-600" />
+            <span>Stock bajo</span>
+          </button>
         </div>
       </div>
 
       {alertMsg && (
         <div
-          className={`p-4 rounded-xl text-xs flex items-center justify-between ${
+          className={`p-3 rounded-xl text-xs flex items-center justify-between border ${
             alertMsg.type === 'success'
-              ? 'bg-[#EBF2EE] dark:bg-[#203026] text-[#2F4F3E] dark:text-[#A1CEB5] border border-[#D5E3DB] dark:border-[#2E4738]'
-              : 'bg-[#FDF2F0] dark:bg-[#341F1A] text-[#9E4B3E] dark:text-[#EAA399] border border-[#ECD3CC] dark:border-[#4E2B25]'
+              ? 'bg-[#EAF2EC] text-[#28634C] border-[#28634C]/25'
+              : 'bg-red-50 text-red-700 border-red-200'
           }`}
         >
           <span>{alertMsg.text}</span>
-          <button onClick={() => setAlertMsg(null)} className="font-bold underline">
+          <button onClick={() => setAlertMsg(null)} className="font-bold underline cursor-pointer">
             Cerrar
           </button>
         </div>
       )}
 
+      {/* Main Table */}
       {activeTab === 'products' ? (
-        <div className="bg-white dark:bg-[#201D1B] rounded-2xl border border-[#E8E2D8] dark:border-[#2D2825] shadow-xs overflow-hidden">
-          <div className="p-4 border-b border-[#E8E2D8] dark:border-[#2D2825]">
-            <div className="relative max-w-md">
-              <Search className="w-4 h-4 text-stone-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Buscar por nombre, SKU o código de barra..."
-                className="w-full pl-9 pr-4 py-2 bg-[#FAF7F2] dark:bg-[#1A1817] border border-[#E4DDD2] dark:border-[#352F2B] rounded-xl text-xs text-stone-900 dark:text-white focus:outline-[#5E836F]"
-              />
-            </div>
-          </div>
-
+        <div className="bg-white rounded-2xl border border-[#E8E2D8] shadow-xs overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
-              <thead className="bg-[#FAF7F2] dark:bg-[#282421] text-stone-500 uppercase tracking-wider font-bold border-b border-[#E8E2D8] dark:border-[#2D2825]">
+              <thead className="bg-[#FAF8F2]/60 text-[#5E7166] font-semibold border-b border-[#E8E2D8]">
                 <tr>
-                  <th className="px-4 py-3">Producto</th>
+                  <th className="px-5 py-3">Producto</th>
                   <th className="px-4 py-3">SKU / Código</th>
-                  <th className="px-4 py-3">Precio Costo</th>
-                  <th className="px-4 py-3">Precio Venta</th>
-                  <th className="px-4 py-3">Stock Actual</th>
-                  <th className="px-4 py-3 text-right">Movimiento</th>
+                  <th className="px-4 py-3">Costo</th>
+                  <th className="px-4 py-3">Venta</th>
+                  <th className="px-4 py-3">Stock</th>
+                  <th className="px-4 py-3 text-center">Ajustar stock</th>
+                  <th className="px-4 py-3 w-8 text-right" />
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[#F2ECE4] dark:divide-[#2D2825]">
-                {orgProducts.map((p) => {
-                  const isLowStock = p.current_stock <= p.min_stock_alert;
+              <tbody className="divide-y divide-[#E8E2D8]/60">
+                {orgProducts
+                  .filter((p) => {
+                    if (filterLowStock && p.current_stock > p.min_stock_alert) return false;
+                    return true;
+                  })
+                  .map((p) => {
+                    const isLowStock = p.current_stock <= p.min_stock_alert;
 
-                  return (
-                    <tr key={p.id} className="hover:bg-[#FAF7F2]/80 dark:hover:bg-[#282421]/60 transition">
-                      <td className="px-4 py-3">
-                        <div className="font-bold text-stone-900 dark:text-white">{p.name}</div>
-                        <div className="text-[10px] text-stone-400">{p.category}</div>
-                      </td>
-                      <td className="px-4 py-3 font-mono text-stone-600 dark:text-stone-300">
-                        {p.sku || p.barcode || '—'}
-                      </td>
-                      <td className="px-4 py-3 text-stone-600 dark:text-stone-400 tabular-nums">
-                        ${p.cost_price.toLocaleString()}
-                      </td>
-                      <td className="px-4 py-3 font-bold text-stone-900 dark:text-white tabular-nums">
-                        ${p.sale_price.toLocaleString()}
-                      </td>
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-2">
+                    return (
+                      <tr key={p.id} className="hover:bg-[#FAF8F2]/50 transition">
+                        <td className="px-5 py-3.5 font-bold text-xs text-[#24352C]">
+                          {p.name}
+                        </td>
+                        <td className="px-4 py-3.5 font-mono text-[#5E7166] text-xs">
+                          {p.sku || p.barcode || '—'}
+                        </td>
+                        <td className="px-4 py-3.5 text-[#5E7166] tabular-nums">
+                          ${(p.cost_price || 0).toLocaleString()}
+                        </td>
+                        <td className="px-4 py-3.5 font-bold text-[#24352C] tabular-nums">
+                          ${(p.sale_price || 0).toLocaleString()}
+                        </td>
+                        <td className="px-4 py-3.5">
                           <span
-                            className={`font-bold text-sm tabular-nums ${
-                              isLowStock ? 'text-[#B4654A]' : 'text-stone-900 dark:text-white'
+                            className={`font-bold tabular-nums ${
+                              isLowStock ? 'text-amber-700' : 'text-[#24352C]'
                             }`}
                           >
                             {p.current_stock} un.
                           </span>
-                          {isLowStock && (
-                            <span className="flex items-center gap-1 text-[10px] font-semibold text-[#8C6B32] dark:text-[#E8C78A] bg-[#FEF8ED] dark:bg-[#332A1C] px-2 py-0.5 rounded-lg border border-[#F3E5CB] dark:border-[#4D3F28]">
-                              <AlertTriangle className="w-3 h-3" />
-                              <span>Mínimo ({p.min_stock_alert})</span>
-                            </span>
-                          )}
-                        </div>
-                      </td>
-                      <td className="px-4 py-3 text-right">
-                        <button
-                          onClick={() => {
-                            setSelectedProduct(p);
-                            setShowMovementModal(true);
-                          }}
-                          className="px-3 py-1.5 rounded-xl bg-[#EBF2EE] dark:bg-[#203026] text-[#335946] dark:text-[#A1CEB5] font-semibold hover:bg-[#DFECE3] dark:hover:bg-[#273B2F] transition border border-[#D5E3DB] dark:border-[#2E4738]"
-                        >
-                          Ajustar / Mover
-                        </button>
-                      </td>
-                    </tr>
-                  );
-                })}
+                        </td>
+                        <td className="px-4 py-3.5 text-center">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSelectedProduct(p);
+                              setShowMovementModal(true);
+                            }}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-[#CCD6D0] hover:bg-[#FAF8F2] text-xs font-semibold text-[#24352C] transition shadow-2xs cursor-pointer"
+                          >
+                            <Sliders className="w-3.5 h-3.5 text-[#28634C]" />
+                            <span>Ajustar stock</span>
+                          </button>
+                        </td>
+                        <td className="px-4 py-3.5 text-right text-[#5E7166]">
+                          <button
+                            type="button"
+                            className="p-1 rounded-lg hover:bg-[#FAF8F2] text-[#5E7166] transition cursor-pointer"
+                          >
+                            <MoreVertical className="w-4 h-4" />
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
               </tbody>
             </table>
           </div>
         </div>
       ) : (
         /* Movements Audit Table */
-        <div className="bg-white dark:bg-[#201D1B] rounded-2xl border border-[#E8E2D8] dark:border-[#2D2825] shadow-xs overflow-hidden">
+        <div className="bg-white rounded-2xl border border-[#E8E2D8] shadow-xs overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
-              <thead className="bg-[#FAF7F2] dark:bg-[#282421] text-stone-500 uppercase tracking-wider font-bold border-b border-[#E8E2D8] dark:border-[#2D2825]">
+              <thead className="bg-[#FAF8F2]/60 text-[#5E7166] font-semibold border-b border-[#E8E2D8]">
                 <tr>
                   <th className="px-4 py-3">Fecha y Hora</th>
                   <th className="px-4 py-3">Producto</th>
-                  <th className="px-4 py-3">Tipo Movimiento</th>
+                  <th className="px-4 py-3">Tipo</th>
                   <th className="px-4 py-3">Cantidad</th>
-                  <th className="px-4 py-3">Stock Final</th>
-                  <th className="px-4 py-3">Motivo / Auditoría</th>
+                  <th className="px-4 py-3">Stock Resultante</th>
+                  <th className="px-4 py-3">Motivo</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[#F2ECE4] dark:divide-[#2D2825]">
+              <tbody className="divide-y divide-[#E8E2D8]/60">
                 {orgMovements.map((mov) => {
+                  const prod = products.find((p) => p.id === mov.product_id);
                   const isPositive = mov.quantity > 0;
 
                   return (
-                    <tr key={mov.id} className="hover:bg-[#FAF7F2]/80 dark:hover:bg-[#282421]/60">
-                      <td className="px-4 py-3 text-stone-600 dark:text-stone-400 tabular-nums">
-                        {new Date(mov.created_at).toLocaleString('es-AR')}
+                    <tr key={mov.id} className="hover:bg-[#FAF8F2]/50 transition">
+                      <td className="px-4 py-3 font-mono text-[#5E7166]">
+                        {new Date(mov.created_at).toLocaleString('es-AR', {
+                          dateStyle: 'short',
+                          timeStyle: 'short',
+                        })}
                       </td>
-                      <td className="px-4 py-3 font-semibold text-stone-800 dark:text-stone-200">
-                        {mov.product_name}
+                      <td className="px-4 py-3 font-bold text-[#24352C]">
+                        {prod?.name || 'Producto'}
                       </td>
-                      <td className="px-4 py-3">
-                        <span className="font-mono text-[11px] capitalize">{mov.movement_type.replace('_', ' ')}</span>
+                      <td className="px-4 py-3 font-mono text-[11px] capitalize text-[#5E7166]">
+                        {mov.movement_type.replace('_', ' ')}
                       </td>
                       <td className="px-4 py-3 font-bold tabular-nums">
-                        <span className={isPositive ? 'text-[#3B6652]' : 'text-[#9E4B3E]'}>
+                        <span className={isPositive ? 'text-[#28634C]' : 'text-red-600'}>
                           {isPositive ? `+${mov.quantity}` : mov.quantity}
                         </span>
                       </td>
-                      <td className="px-4 py-3 font-bold text-stone-900 dark:text-white tabular-nums">
+                      <td className="px-4 py-3 font-bold text-[#24352C] tabular-nums">
                         {mov.new_stock} un.
                       </td>
-                      <td className="px-4 py-3 text-stone-600 dark:text-stone-400">
-                        <div>{mov.reason}</div>
-                        <div className="text-[10px] text-stone-400">Por {mov.performed_by_name}</div>
+                      <td className="px-4 py-3 text-[#5E7166]">
+                        <div>{mov.reason || 'Sin motivo'}</div>
                       </td>
                     </tr>
                   );

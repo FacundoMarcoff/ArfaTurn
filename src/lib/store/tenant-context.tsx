@@ -136,6 +136,8 @@ interface TenantContextType {
   updateOrganizationSubscription: (orgId: string, subscriptionType: SubscriptionType) => void;
   createBranch: (params: { name: string; address?: string; city?: string; phone?: string; timezone?: string }) => { success: boolean; branch?: Branch; message?: string };
   toggleBranchActive: (branchId: string) => { success: boolean; message?: string };
+  updateBranch: (branchId: string, updates: Partial<Branch>) => void;
+  updateWorkingHour: (id: string, updates: Partial<WorkingHour>) => void;
   createOrganization: (orgData: {
     name: string;
     industry: Organization['industry'];
@@ -1513,6 +1515,30 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     return { success: true };
   };
 
+  const updateBranch = (branchId: string, updates: Partial<Branch>) => {
+    setBranches((prev) =>
+      prev.map((b) => (b.id === branchId ? { ...b, ...updates } : b))
+    );
+    notifySync();
+    if (isSupabaseConfigured && supabase) {
+      supabase.from('branches').update(updates).eq('id', branchId).then(({ error }) => {
+        if (error) console.error('Supabase updateBranch error:', error);
+      });
+    }
+  };
+
+  const updateWorkingHour = (id: string, updates: Partial<WorkingHour>) => {
+    setWorkingHours((prev) =>
+      prev.map((wh) => (wh.id === id ? { ...wh, ...updates } : wh))
+    );
+    notifySync();
+    if (isSupabaseConfigured && supabase) {
+      supabase.from('working_hours').update(updates).eq('id', id).then(({ error }) => {
+        if (error) console.error('Supabase updateWorkingHour error:', error);
+      });
+    }
+  };
+
   const updateOrganizationSubscription = (orgId: string, subscriptionType: SubscriptionType) => {
     const sub = calculateSubscriptionDetails(subscriptionType);
     updateOrganizationAccountConfig(orgId, {
@@ -2036,6 +2062,8 @@ export const TenantProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         updateOrganizationSubscription,
         createBranch,
         toggleBranchActive,
+        updateBranch,
+        updateWorkingHour,
         createOrganization,
         deleteOrganization,
         currentUser,

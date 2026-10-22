@@ -10,6 +10,9 @@ import {
   ChevronDown,
   Sparkles,
   Layers,
+  Search,
+  MoreVertical,
+  Info,
 } from 'lucide-react';
 import { useTenant } from '../../lib/store/tenant-context';
 import { Service, Resource } from '../../types/database.types';
@@ -26,6 +29,7 @@ export const ServicesResourcesPage: React.FC = () => {
   } = useTenant();
 
   const [activeTab, setActiveTab] = useState<'services' | 'resources'>('services');
+  const [serviceSearch, setServiceSearch] = useState('');
   const [showNewServiceModal, setShowNewServiceModal] = useState(false);
   const [showAdvancedTime, setShowAdvancedTime] = useState(false);
 
@@ -77,166 +81,166 @@ export const ServicesResourcesPage: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-[#E8E2D8] shadow-xs">
-        <div>
-          <div className="flex items-center gap-2">
-            <span className="p-2 bg-[#FAF8F2] rounded-xl border border-[#E8E2D8] text-[#28634C]">
-              <Scissors className="w-5 h-5" />
-            </span>
-            <h1 className="text-xl sm:text-2xl font-bold text-[#24352C] tracking-tight">
-              Servicios y Precios
-            </h1>
-          </div>
-          <p className="text-xs text-[#5E7166] mt-1.5">
-            Configurá los servicios que ofrecés en {currentOrg.name}, su valor y el tiempo que dura cada turno.
-          </p>
+    <div className="space-y-4">
+      {/* Header (Title + + Nuevo servicio) */}
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-extrabold text-[#24352C] tracking-tight">
+          Servicios y precios
+        </h1>
+
+        <button
+          type="button"
+          onClick={() => setShowNewServiceModal(true)}
+          className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#28634C] hover:bg-[#1E4E3B] text-white text-xs font-bold shadow-xs transition cursor-pointer"
+        >
+          <Plus className="w-4 h-4 text-[#E8CDA8]" />
+          <span>+ Nuevo servicio</span>
+        </button>
+      </div>
+
+      {/* Secondary Toolbar: Tabs on left, Search on right */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-1">
+        {/* Pills */}
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setActiveTab('services')}
+            className={`px-4 py-2 rounded-xl text-xs font-bold transition cursor-pointer ${
+              activeTab === 'services'
+                ? 'bg-[#EAF2EC] text-[#28634C] shadow-2xs'
+                : 'bg-white text-[#5E7166] border border-[#CCD6D0] hover:bg-[#FAF8F2]'
+            }`}
+          >
+            Servicios ({orgServices.length})
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('resources')}
+            className={`px-4 py-2 rounded-xl text-xs font-bold transition cursor-pointer ${
+              activeTab === 'resources'
+                ? 'bg-[#EAF2EC] text-[#28634C] shadow-2xs'
+                : 'bg-white text-[#5E7166] border border-[#CCD6D0] hover:bg-[#FAF8F2]'
+            }`}
+          >
+            Puestos ({branchResources.length})
+          </button>
         </div>
 
-        <div className="flex items-center gap-2 flex-wrap">
-          {/* Tab Selector */}
-          <div className="flex bg-[#FAF8F2] p-1 rounded-xl text-xs font-semibold border border-[#E8E2D8]">
-            <button
-              onClick={() => setActiveTab('services')}
-              className={`px-3 py-2 rounded-lg transition cursor-pointer min-h-[40px] flex items-center gap-1.5 ${
-                activeTab === 'services'
-                  ? 'bg-[#28634C] text-white shadow-xs font-bold'
-                  : 'text-[#5E7166] hover:text-[#24352C]'
-              }`}
-            >
-              <span>Servicios</span>
-              <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-white/20">
-                {orgServices.length}
-              </span>
-            </button>
-            <button
-              onClick={() => setActiveTab('resources')}
-              className={`px-3 py-2 rounded-lg transition cursor-pointer min-h-[40px] flex items-center gap-1.5 ${
-                activeTab === 'resources'
-                  ? 'bg-[#28634C] text-white shadow-xs font-bold'
-                  : 'text-[#5E7166] hover:text-[#24352C]'
-              }`}
-            >
-              <span>Puestos / Sillones</span>
-              <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-white/20">
-                {branchResources.length}
-              </span>
-            </button>
-          </div>
-
-          {activeTab === 'services' && (
-            <button
-              onClick={() => setShowNewServiceModal(true)}
-              className="flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-[#28634C] hover:bg-[#1E4E3B] text-white font-bold text-xs shadow-xs transition cursor-pointer min-h-[40px]"
-            >
-              <Plus className="w-4 h-4 text-[#E8CDA8]" />
-              <span>Nuevo Servicio</span>
-            </button>
-          )}
+        {/* Search */}
+        <div className="relative w-full sm:w-72">
+          <Search className="w-4 h-4 text-[#5E7166] absolute left-3 top-1/2 -translate-y-1/2" />
+          <input
+            type="text"
+            value={serviceSearch}
+            onChange={(e) => setServiceSearch(e.target.value)}
+            placeholder="Buscar servicio"
+            className="w-full pl-9 pr-3.5 py-2 bg-white border border-[#CCD6D0] rounded-xl text-xs text-[#24352C] placeholder-[#5E7166]/70 focus:outline-[#28634C] shadow-2xs"
+          />
         </div>
       </div>
 
-      {/* Services Tab */}
+      {/* Main Content */}
       {activeTab === 'services' ? (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {orgServices.length === 0 ? (
-            <div className="col-span-full py-12 text-center text-[#5E7166] bg-white rounded-2xl border border-[#E8E2D8] p-8 space-y-2">
-              <Scissors className="w-8 h-8 text-[#5E7166]/40 mx-auto" />
-              <p className="font-semibold text-sm">No tenés servicios creados todavía.</p>
-              <p className="text-xs">Hacé clic en &quot;Nuevo Servicio&quot; para empezar a cargar tus prestaciones.</p>
-            </div>
-          ) : (
-            orgServices.map((service) => (
-              <div
-                key={service.id}
-                className="bg-white rounded-2xl border border-[#E8E2D8] p-5 shadow-xs flex flex-col justify-between space-y-4 hover:border-[#28634C]/40 transition"
-              >
-                <div className="space-y-3">
-                  <div className="flex items-start justify-between gap-2">
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-[#28634C] bg-[#F7EFE4] px-2.5 py-1 rounded-lg border border-[#E8CDA8]/60">
-                      {service.category}
-                    </span>
-                    <div className="text-xl font-bold text-[#28634C] tabular-nums">
-                      ${service.price.toLocaleString()}
-                    </div>
-                  </div>
+        <div className="bg-white rounded-2xl border border-[#E8E2D8] shadow-xs overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs">
+              <thead className="bg-[#FAF8F2]/60 text-[#5E7166] font-semibold border-b border-[#E8E2D8]">
+                <tr>
+                  <th className="px-5 py-3">Servicio</th>
+                  <th className="px-4 py-3">Duración</th>
+                  <th className="px-4 py-3">Limpieza</th>
+                  <th className="px-4 py-3">Precio</th>
+                  <th className="px-4 py-3">Reserva online</th>
+                  <th className="px-4 py-3 w-10 text-right" />
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[#E8E2D8]/60">
+                {orgServices
+                  .filter((s) => s.name.toLowerCase().includes(serviceSearch.toLowerCase()))
+                  .map((s) => (
+                    <tr
+                      key={s.id}
+                      className="hover:bg-[#FAF8F2]/50 transition cursor-pointer"
+                    >
+                      <td className="px-5 py-3.5 font-bold text-xs text-[#24352C]">
+                        {s.name}
+                      </td>
+                      <td className="px-4 py-3.5 text-[#5E7166] font-medium">
+                        {s.duration_minutes} min
+                      </td>
+                      <td className="px-4 py-3.5 text-[#5E7166] font-medium">
+                        {s.clean_buffer_minutes || 5} min
+                      </td>
+                      <td className="px-4 py-3.5 font-bold text-[#24352C] tabular-nums">
+                        ${s.price.toLocaleString()}
+                        {s.deposit_amount > 0 && (
+                          <span className="block text-[10px] text-[#5E7166] font-normal">
+                            Seña ${s.deposit_amount.toLocaleString()}
+                          </span>
+                        )}
+                      </td>
+                      <td className="px-4 py-3.5">
+                        <span className="inline-block px-2.5 py-0.5 rounded-full text-xs font-semibold bg-[#EAF2EC] text-[#28634C]">
+                          {s.is_public ? 'Visible' : 'Oculto'}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3.5 text-right text-[#5E7166]">
+                        <button
+                          type="button"
+                          className="p-1 rounded-lg hover:bg-[#FAF8F2] text-[#5E7166] transition cursor-pointer"
+                        >
+                          <MoreVertical className="w-4 h-4" />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+              </tbody>
+            </table>
+          </div>
 
-                  <div>
-                    <h3 className="font-bold text-base text-[#24352C] leading-snug">
-                      {service.name}
-                    </h3>
-                    <p className="text-xs text-[#5E7166] mt-1 leading-relaxed line-clamp-2">
-                      {service.description || 'Sin descripción adicional.'}
-                    </p>
-                  </div>
-
-                  {/* Duration Chip */}
-                  <div className="flex items-center gap-2 flex-wrap pt-1 text-xs">
-                    <span className="flex items-center gap-1.5 font-bold text-[#24352C] bg-[#FAF8F2] px-3 py-1.5 rounded-xl border border-[#E8E2D8]">
-                      <Clock className="w-3.5 h-3.5 text-[#28634C]" />
-                      <span className="tabular-nums">{service.duration_minutes} min</span>
-                    </span>
-
-                    {(service.prep_buffer_minutes > 0 || service.clean_buffer_minutes > 0) && (
-                      <span className="text-[11px] text-[#5E7166] bg-[#FAF8F2] px-2 py-1 rounded-lg">
-                        +{service.clean_buffer_minutes + service.prep_buffer_minutes}m limpieza
-                      </span>
-                    )}
-
-                    {service.deposit_amount > 0 && (
-                      <span className="text-[11px] font-bold text-[#28634C] bg-[#F7EFE4] px-2.5 py-1 rounded-lg border border-[#E8CDA8]/60">
-                        Seña: ${service.deposit_amount.toLocaleString()}
-                      </span>
-                    )}
-                  </div>
-                </div>
-
-                <div className="pt-3 border-t border-[#E8E2D8] flex items-center justify-between text-xs text-[#5E7166]">
-                  <span className="flex items-center gap-1.5 font-medium">
-                    <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
-                    {service.is_public ? 'Visible para reservar' : 'Oculto'}
-                  </span>
-                  <span className="text-[11px] font-medium text-[#5E7166]">
-                    IVA {service.tax_rate_pct}%
-                  </span>
-                </div>
-              </div>
-            ))
-          )}
+          <div className="p-3.5 bg-[#FAF8F2]/40 border-t border-[#E8E2D8] flex items-center gap-2 text-xs text-[#5E7166]">
+            <Info className="w-4 h-4 text-[#28634C] shrink-0" />
+            <span>Seleccioná un servicio para editar sus datos.</span>
+          </div>
         </div>
       ) : (
-        /* Resources Tab */
-        <div className="space-y-4">
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-            {branchResources.map((res) => (
-              <div
-                key={res.id}
-                className="bg-white rounded-2xl border border-[#E8E2D8] p-5 shadow-xs space-y-3"
-              >
-                <div className="flex items-center justify-between">
-                  <div className="w-10 h-10 rounded-xl bg-[#F7EFE4] text-[#28634C] flex items-center justify-center font-bold border border-[#E8CDA8]/60">
-                    <Box className="w-5 h-5" />
-                  </div>
-                  <span className="text-xs font-bold px-2.5 py-1 rounded-lg bg-[#FAF8F2] text-[#24352C] border border-[#E8E2D8]">
-                    Capacidad: {res.capacity} {res.capacity === 1 ? 'persona' : 'personas'}
-                  </span>
-                </div>
-
-                <div>
-                  <h3 className="font-bold text-base text-[#24352C]">{res.name}</h3>
-                  <p className="text-xs text-[#5E7166] mt-0.5">Espacio de trabajo en {currentBranch.name}</p>
-                </div>
-
-                <div className="text-[11px] text-[#5E7166] border-t border-[#E8E2D8] pt-2 flex items-center gap-1">
-                  <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
-                  <span>Operativo y sincronizado con turnos</span>
-                </div>
-              </div>
-            ))}
+        /* Resources / Puestos View */
+        <div className="bg-white rounded-2xl border border-[#E8E2D8] shadow-xs overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs">
+              <thead className="bg-[#FAF8F2]/60 text-[#5E7166] font-semibold border-b border-[#E8E2D8]">
+                <tr>
+                  <th className="px-5 py-3">Puesto / Sillón</th>
+                  <th className="px-4 py-3">Tipo</th>
+                  <th className="px-4 py-3">Capacidad</th>
+                  <th className="px-4 py-3">Estado</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[#E8E2D8]/60">
+                {branchResources.map((res) => (
+                  <tr key={res.id} className="hover:bg-[#FAF8F2]/50 transition">
+                    <td className="px-5 py-3.5 font-bold text-xs text-[#24352C]">
+                      {res.name}
+                    </td>
+                    <td className="px-4 py-3.5 text-[#5E7166] capitalize">
+                      {res.resource_type}
+                    </td>
+                    <td className="px-4 py-3.5 text-[#24352C] font-semibold">
+                      {res.capacity} {res.capacity === 1 ? 'persona' : 'personas'}
+                    </td>
+                    <td className="px-4 py-3.5">
+                      <span className="inline-block px-2.5 py-0.5 rounded-full text-xs font-semibold bg-[#EAF2EC] text-[#28634C]">
+                        Operativo
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </div>
       )}
+
 
       {/* CREATE SERVICE MODAL */}
       {showNewServiceModal && (
