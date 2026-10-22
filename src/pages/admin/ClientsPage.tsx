@@ -34,10 +34,19 @@ export const ClientsPage: React.FC = () => {
 
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
+  const [highlightedClientId, setHighlightedClientId] = useState<string>('');
   const [showNewModal, setShowNewModal] = useState(false);
   const [showMergeModal, setShowMergeModal] = useState(false);
   const [duplicateIdToMerge, setDuplicateIdToMerge] = useState('');
   const [actionAlert, setActionAlert] = useState<string | null>(null);
+
+  const getInitials = (name: string) => {
+    const parts = name.trim().split(' ').filter(Boolean);
+    if (parts.length >= 2) {
+      return (parts[0][0] + parts[1][0]).toUpperCase();
+    }
+    return name.slice(0, 2).toUpperCase();
+  };
 
   // New customer form
   const [newName, setNewName] = useState('');
@@ -103,66 +112,184 @@ export const ClientsPage: React.FC = () => {
     }
   };
 
+  const activeHighlightedCustomer = useMemo(() => {
+    if (highlightedClientId) {
+      const found = filteredCustomers.find((c) => c.id === highlightedClientId);
+      if (found) return found;
+    }
+    return filteredCustomers[0] || null;
+  }, [filteredCustomers, highlightedClientId]);
+
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-[#E8E2D8] shadow-xs">
-        <div>
-          <div className="flex items-center gap-2">
-            <span className="p-2 bg-[#FAF8F2] rounded-xl border border-[#E8E2D8] text-[#28634C]">
-              <Users className="w-5 h-5" />
-            </span>
-            <h1 className="text-xl sm:text-2xl font-bold text-[#24352C] tracking-tight">Mis Clientes</h1>
-          </div>
-          <p className="text-xs text-[#5E7166] mt-1.5">
-            Directorio de clientes de {currentOrg.name}. Contactalos por WhatsApp con un toque y revisá sus visitas.
-          </p>
-        </div>
-
-        <button
-          onClick={() => setShowNewModal(true)}
-          className="flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-[#28634C] hover:bg-[#1E4E3B] text-white font-bold text-xs shadow-xs transition cursor-pointer min-h-[44px]"
-        >
-          <Plus className="w-4 h-4 text-[#E8CDA8]" />
-          <span>Agregar Cliente</span>
-        </button>
-      </div>
-
-      {actionAlert && (
-        <div className="p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs flex items-center justify-between">
-          <span>{actionAlert}</span>
-          <button onClick={() => setActionAlert(null)} className="font-bold underline cursor-pointer">
-            Cerrar
+      {/* MOBILE-ONLY VIEW (SCREEN 2 MOCKUP) */}
+      <div className="md:hidden space-y-3.5 pb-24">
+        {/* Title & Agregar Button */}
+        <div className="flex items-center justify-between">
+          <h1 className="text-2xl font-bold text-[#24352C] tracking-tight">Clientes</h1>
+          <button
+            type="button"
+            onClick={() => setShowNewModal(true)}
+            className="flex items-center gap-1 px-3.5 py-1.5 rounded-xl border border-[#28634C] text-[#28634C] bg-white hover:bg-[#FAF8F2] text-xs font-bold transition shadow-2xs cursor-pointer"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            <span>Agregar</span>
           </button>
         </div>
-      )}
 
-      {/* Search Bar */}
-      <div className="bg-white rounded-2xl border border-[#E8E2D8] shadow-xs p-3">
+        {/* Search Input */}
         <div className="relative">
-          <Search className="w-4 h-4 text-[#5E7166] absolute left-3.5 top-1/2 -translate-y-1/2" />
+          <Search className="w-4 h-4 text-[#5E7166] absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Buscar por nombre, teléfono o email..."
-            className="w-full pl-10 pr-4 py-2.5 bg-[#FAF8F2] border border-[#E8E2D8] rounded-xl text-xs sm:text-sm text-[#24352C] focus:outline-[#28634C]"
+            placeholder="Buscar nombre o teléfono"
+            className="w-full bg-white border border-[#E8E2D8] rounded-xl pl-9 pr-3.5 py-2.5 text-xs text-[#24352C] focus:outline-[#28634C] shadow-2xs"
           />
         </div>
+
+        {/* Counter */}
+        <div className="text-xs text-[#5E7166] font-medium pt-0.5">
+          {filteredCustomers.length} {filteredCustomers.length === 1 ? 'cliente' : 'clientes'}
+        </div>
+
+        {/* Client List */}
+        <div className="bg-white rounded-2xl border border-[#E8E2D8] shadow-2xs divide-y divide-[#E8E2D8] overflow-hidden">
+          {filteredCustomers.length === 0 ? (
+            <div className="p-8 text-center text-xs text-[#5E7166] space-y-1">
+              <Users className="w-6 h-6 mx-auto text-[#5E7166]/40" />
+              <p className="font-semibold text-sm text-[#24352C]">No se encontraron clientes</p>
+              <p>Tocá &quot;+ Agregar&quot; para registrar uno nuevo.</p>
+            </div>
+          ) : (
+            filteredCustomers.map((cust) => {
+              const isSelected = activeHighlightedCustomer?.id === cust.id;
+              const lastAppt = appointments
+                .filter((a) => a.customer_id === cust.id)
+                .sort((a, b) => new Date(b.starts_at).getTime() - new Date(a.starts_at).getTime())[0];
+              const lastDateStr = lastAppt
+                ? new Date(lastAppt.starts_at).toLocaleDateString('es-AR')
+                : new Date(cust.created_at).toLocaleDateString('es-AR');
+
+              return (
+                <div
+                  key={cust.id}
+                  onClick={() => setHighlightedClientId(cust.id)}
+                  className={`p-3.5 flex items-center justify-between gap-3 transition cursor-pointer ${
+                    isSelected ? 'bg-[#FAF8F2]' : 'hover:bg-[#FAF8F2]/60'
+                  }`}
+                >
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="w-10 h-10 rounded-full bg-[#E5E0D8] text-[#24352C] font-bold text-xs flex items-center justify-center shrink-0">
+                      {getInitials(cust.full_name)}
+                    </div>
+                    <div className="min-w-0">
+                      <h4 className="font-bold text-sm text-[#24352C] truncate">
+                        {cust.full_name}
+                      </h4>
+                      <p className="text-xs text-[#5E7166] truncate mt-0.5">
+                        {cust.total_appointments} {cust.total_appointments === 1 ? 'visita' : 'visitas'} · Última: {lastDateStr}
+                      </p>
+                    </div>
+                  </div>
+
+                  <ChevronRight className="w-4 h-4 text-[#5E7166] shrink-0" />
+                </div>
+              );
+            })
+          )}
+        </div>
+
+        {/* Selected / Featured Client Card at Bottom */}
+        {activeHighlightedCustomer && (
+          <div className="bg-white rounded-2xl border border-[#E8E2D8] p-4 shadow-sm space-y-3">
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="w-12 h-12 rounded-full bg-[#E5E0D8] text-[#24352C] font-bold text-sm flex items-center justify-center shrink-0">
+                {getInitials(activeHighlightedCustomer.full_name)}
+              </div>
+              <div className="min-w-0">
+                <h4 className="font-bold text-base text-[#24352C] truncate">
+                  {activeHighlightedCustomer.full_name}
+                </h4>
+                <p className="text-xs text-[#5E7166]">
+                  {activeHighlightedCustomer.total_appointments} visitas · <strong className="text-[#24352C]">${activeHighlightedCustomer.total_spent.toLocaleString()}</strong> consumidos
+                </p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-2 pt-1">
+              <button
+                type="button"
+                onClick={() => setSelectedCustomer(activeHighlightedCustomer)}
+                className="py-2.5 px-3 rounded-xl border border-[#E8E2D8] bg-white hover:bg-[#FAF8F2] text-xs font-bold text-[#24352C] flex items-center justify-center gap-1.5 transition cursor-pointer"
+              >
+                <Users className="w-3.5 h-3.5 text-[#5E7166]" />
+                <span>Ver ficha</span>
+              </button>
+              <a
+                href={getWhatsAppLink(activeHighlightedCustomer.phone)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="py-2.5 px-3 rounded-xl border border-emerald-500 bg-white hover:bg-emerald-50 text-xs font-bold text-emerald-700 flex items-center justify-center gap-1.5 transition cursor-pointer"
+              >
+                <MessageCircle className="w-3.5 h-3.5 text-emerald-600" />
+                <span>WhatsApp</span>
+              </a>
+            </div>
+          </div>
+        )}
       </div>
 
-      {/* Customer List: Cards on mobile, Table on desktop */}
-      <div className="bg-white rounded-2xl border border-[#E8E2D8] shadow-xs overflow-hidden">
-        {filteredCustomers.length === 0 ? (
-          <div className="py-12 text-center text-[#5E7166] space-y-2">
-            <Users className="w-8 h-8 text-[#5E7166]/40 mx-auto" />
-            <p className="font-medium text-sm">No encontramos clientes con esa búsqueda.</p>
-            <p className="text-xs text-[#5E7166]/80">Podés agregar uno nuevo con el botón verde superior.</p>
+      {/* DESKTOP-ONLY VIEW */}
+      <div className="hidden md:block space-y-6">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-[#E8E2D8] shadow-xs">
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="p-2 bg-[#FAF8F2] rounded-xl border border-[#E8E2D8] text-[#28634C]">
+                <Users className="w-5 h-5" />
+              </span>
+              <h1 className="text-xl sm:text-2xl font-bold text-[#24352C] tracking-tight">Mis Clientes</h1>
+            </div>
+            <p className="text-xs text-[#5E7166] mt-1.5">
+              Directorio de clientes de {currentOrg.name}. Contactalos por WhatsApp con un toque y revisá sus visitas.
+            </p>
           </div>
-        ) : (
-          <>
-            {/* Desktop Table View */}
-            <div className="hidden md:block overflow-x-auto">
+
+          <button
+            onClick={() => setShowNewModal(true)}
+            className="flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-[#28634C] hover:bg-[#1E4E3B] text-white font-bold text-xs shadow-xs transition cursor-pointer min-h-[44px]"
+          >
+            <Plus className="w-4 h-4 text-[#E8CDA8]" />
+            <span>Agregar Cliente</span>
+          </button>
+        </div>
+
+        {/* Search Bar Desktop */}
+        <div className="bg-white rounded-2xl border border-[#E8E2D8] shadow-xs p-3">
+          <div className="relative">
+            <Search className="w-4 h-4 text-[#5E7166] absolute left-3.5 top-1/2 -translate-y-1/2" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Buscar por nombre, teléfono o email..."
+              className="w-full pl-10 pr-4 py-2.5 bg-[#FAF8F2] border border-[#E8E2D8] rounded-xl text-xs sm:text-sm text-[#24352C] focus:outline-[#28634C]"
+            />
+          </div>
+        </div>
+
+        {/* Customer Desktop Table */}
+        <div className="bg-white rounded-2xl border border-[#E8E2D8] shadow-xs overflow-hidden">
+          {filteredCustomers.length === 0 ? (
+            <div className="py-12 text-center text-[#5E7166] space-y-2">
+              <Users className="w-8 h-8 text-[#5E7166]/40 mx-auto" />
+              <p className="font-medium text-sm">No encontramos clientes con esa búsqueda.</p>
+              <p className="text-xs text-[#5E7166]/80">Podés agregar uno nuevo con el botón verde superior.</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">
                 <thead className="bg-[#FAF8F2] text-[#5E7166] font-semibold border-b border-[#E8E2D8]">
                   <tr>
@@ -222,61 +349,8 @@ export const ClientsPage: React.FC = () => {
                 </tbody>
               </table>
             </div>
-
-            {/* Mobile Card View (Easy thumbs & big targets) */}
-            <div className="md:hidden divide-y divide-[#E8E2D8]">
-              {filteredCustomers.map((cust) => (
-                <div
-                  key={cust.id}
-                  onClick={() => setSelectedCustomer(cust)}
-                  className="p-4 hover:bg-[#FAF8F2]/50 transition cursor-pointer space-y-3"
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <h3 className="font-bold text-[#24352C] text-base">{cust.full_name}</h3>
-                      <div className="text-xs text-[#5E7166] mt-0.5 flex items-center gap-1.5 font-mono">
-                        <Phone className="w-3 h-3 text-[#28634C]" />
-                        <span>{cust.phone}</span>
-                      </div>
-                    </div>
-                    <span className="text-xs font-bold text-[#28634C] px-2.5 py-1 rounded-lg bg-[#F7EFE4] border border-[#E8CDA8]/60 tabular-nums">
-                      {cust.total_appointments} turnos
-                    </span>
-                  </div>
-
-                  <div className="flex items-center justify-between pt-1">
-                    <div className="text-xs text-[#5E7166]">
-                      Gastado: <strong className="text-[#24352C]">${cust.total_spent.toLocaleString()}</strong>
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                      <a
-                        href={getWhatsAppLink(cust.phone)}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        onClick={(e) => e.stopPropagation()}
-                        className="p-2 rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 flex items-center gap-1 text-xs font-semibold"
-                        title="Enviar WhatsApp"
-                      >
-                        <MessageCircle className="w-4 h-4" />
-                        <span className="text-[11px]">WhatsApp</span>
-                      </a>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setSelectedCustomer(cust);
-                        }}
-                        className="p-2 rounded-xl bg-[#FAF8F2] text-[#28634C] border border-[#E8E2D8] font-bold text-xs"
-                      >
-                        <ChevronRight className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </>
-        )}
+          )}
+        </div>
       </div>
 
       {/* DETAIL DRAWER / MODAL FOR SELECTED CUSTOMER */}

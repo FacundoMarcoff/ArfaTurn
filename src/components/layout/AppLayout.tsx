@@ -14,6 +14,8 @@ import {
   LogOut,
   Crown,
   Store,
+  ChevronDown,
+  MoreHorizontal,
 } from 'lucide-react';
 import { useTenant } from '../../lib/store/tenant-context';
 import { getIndustryInfo } from '../../lib/constants/industries';
@@ -78,16 +80,35 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
   return (
     <div className="min-h-screen bg-[#FAF8F2] flex flex-col text-[#24352C] font-sans selection:bg-[#E8CDA8]/40 selection:text-[#24352C]">
       {/* Top Navbar */}
-      <header className="sticky top-0 z-40 bg-white/85 backdrop-blur-md border-b border-[#E8E2D8]">
+      <header className="sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-[#E8E2D8]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="lg:hidden p-2 rounded-xl text-[#24352C] hover:bg-[#FAF8F2]"
-            >
-              {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-            </button>
+          {/* Mobile-only header (Exact mockup layout) */}
+          <div className="lg:hidden flex items-center justify-between w-full">
+            <div className="flex flex-col text-left min-w-0">
+              <span className="font-bold text-base text-[#24352C] leading-tight tracking-tight truncate">
+                {currentOrg.name}
+              </span>
+              <button
+                type="button"
+                onClick={() => setMobileMenuOpen(true)}
+                className="text-xs text-[#5E7166] flex items-center gap-1 font-medium hover:text-[#24352C] cursor-pointer"
+              >
+                <span className="truncate">{currentBranch.name}</span>
+                <ChevronDown className="w-3 h-3 text-[#5E7166]" />
+              </button>
+            </div>
 
+            <button
+              type="button"
+              onClick={() => setMobileMenuOpen(true)}
+              className="w-9 h-9 rounded-full bg-[#FAF8F2] hover:bg-[#F2ECE4] border border-[#E8E2D8] text-[#24352C] font-bold text-sm flex items-center justify-center shadow-xs cursor-pointer"
+            >
+              {currentUser.full_name.charAt(0)}
+            </button>
+          </div>
+
+          {/* Desktop header */}
+          <div className="hidden lg:flex items-center gap-3">
             {/* Brand Logo & Name */}
             <Link
               to={currentUser.is_superadmin ? '/admin/accounts' : '/admin/calendar'}
@@ -96,7 +117,7 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
               <div className="w-8 h-8 rounded-xl bg-[#28634C] text-[#FAF8F2] flex items-center justify-center font-serif font-bold text-sm shadow-xs">
                 TP
               </div>
-              <span className="hidden sm:inline font-bold text-lg tracking-tight text-[#24352C]">
+              <span className="font-bold text-lg tracking-tight text-[#24352C]">
                 Turno<span className="text-[#28634C] font-normal">Pro</span>
               </span>
             </Link>
@@ -118,14 +139,14 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
             )}
           </div>
 
-          {/* Right Header items */}
-          <div className="flex items-center gap-3">
+          {/* Right Header items (Desktop only) */}
+          <div className="hidden lg:flex items-center gap-3">
             {/* User display */}
             <div className="flex items-center gap-2.5 p-1 pl-2.5 rounded-xl bg-[#FAF8F2] border border-[#E8E2D8] text-xs">
               <div className="w-7 h-7 rounded-lg bg-[#28634C] text-[#FAF8F2] flex items-center justify-center font-bold text-xs shrink-0 shadow-2xs">
                 {currentUser.full_name.charAt(0)}
               </div>
-              <div className="hidden sm:block text-left pr-1">
+              <div className="text-left pr-1">
                 <div className="font-bold text-[#24352C] leading-tight">
                   {currentUser.full_name}
                 </div>
@@ -142,7 +163,7 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
               title="Cerrar sesión"
             >
               <LogOut className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Cerrar Sesión</span>
+              <span>Cerrar Sesión</span>
             </button>
           </div>
         </div>
@@ -266,14 +287,14 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
         </main>
       </div>
 
-      {/* Mobile Bottom Navigation Bar (Quick thumb access for mobile devices) */}
+      {/* Mobile Bottom Navigation Bar (Exact 4 items from mockup) */}
       {!currentUser.is_superadmin && (
-        <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-[#E8E2D8] px-2 py-1.5 flex items-center justify-around shadow-lg">
+        <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-[#E8E2D8] px-3 py-2 flex items-center justify-around shadow-lg">
           <Link
             to="/admin/calendar"
-            className={`flex flex-col items-center justify-center p-1.5 rounded-xl transition ${
+            className={`flex flex-col items-center justify-center py-1 px-3 rounded-2xl transition cursor-pointer min-w-[64px] ${
               location.pathname === '/admin/calendar'
-                ? 'text-[#28634C] font-bold'
+                ? 'bg-[#EAF2EC] text-[#28634C] font-bold'
                 : 'text-[#5E7166] hover:text-[#24352C]'
             }`}
           >
@@ -283,9 +304,9 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
 
           <Link
             to="/admin/clients"
-            className={`flex flex-col items-center justify-center p-1.5 rounded-xl transition ${
+            className={`flex flex-col items-center justify-center py-1 px-3 rounded-2xl transition cursor-pointer min-w-[64px] ${
               location.pathname === '/admin/clients'
-                ? 'text-[#28634C] font-bold'
+                ? 'bg-[#EAF2EC] text-[#28634C] font-bold'
                 : 'text-[#5E7166] hover:text-[#24352C]'
             }`}
           >
@@ -295,9 +316,9 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
 
           <Link
             to="/admin/sales"
-            className={`flex flex-col items-center justify-center p-1.5 rounded-xl transition ${
+            className={`flex flex-col items-center justify-center py-1 px-3 rounded-2xl transition cursor-pointer min-w-[64px] ${
               location.pathname === '/admin/sales'
-                ? 'text-[#28634C] font-bold'
+                ? 'bg-[#EAF2EC] text-[#28634C] font-bold'
                 : 'text-[#5E7166] hover:text-[#24352C]'
             }`}
           >
@@ -305,25 +326,17 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
             <span className="text-[10px] mt-0.5">Caja</span>
           </Link>
 
-          <Link
-            to="/admin/services"
-            className={`flex flex-col items-center justify-center p-1.5 rounded-xl transition ${
-              location.pathname === '/admin/services'
-                ? 'text-[#28634C] font-bold'
-                : 'text-[#5E7166] hover:text-[#24352C]'
-            }`}
-          >
-            <Scissors className="w-5 h-5" />
-            <span className="text-[10px] mt-0.5">Servicios</span>
-          </Link>
-
           <button
             type="button"
             onClick={() => setMobileMenuOpen(true)}
-            className="flex flex-col items-center justify-center p-1.5 rounded-xl text-[#5E7166] hover:text-[#24352C] transition"
+            className={`flex flex-col items-center justify-center py-1 px-3 rounded-2xl transition cursor-pointer min-w-[64px] ${
+              !['/admin/calendar', '/admin/clients', '/admin/sales'].includes(location.pathname)
+                ? 'bg-[#EAF2EC] text-[#28634C] font-bold'
+                : 'text-[#5E7166] hover:text-[#24352C]'
+            }`}
           >
-            <Menu className="w-5 h-5" />
-            <span className="text-[10px] mt-0.5">Menú</span>
+            <MoreHorizontal className="w-5 h-5" />
+            <span className="text-[10px] mt-0.5">Más</span>
           </button>
         </nav>
       )}

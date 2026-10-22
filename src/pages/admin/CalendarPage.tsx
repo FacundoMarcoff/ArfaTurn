@@ -22,6 +22,8 @@ import {
   Globe,
   Copy,
   Check,
+  Share2,
+  ChevronDown,
   Play,
   Timer,
   CheckCircle2,
@@ -120,6 +122,35 @@ export const CalendarPage: React.FC = () => {
       return apptDateStr !== selectedDateStr && appt.status !== 'cancelled';
     });
   }, [appointments, currentOrg.id, currentBranch.id, selectedProfFilter, selectedDateStr]);
+
+  // 7-day strip for mobile (Screen 1 mockup)
+  const weekDays = useMemo(() => {
+    const current = new Date(selectedDate);
+    const day = current.getDay();
+    const diff = current.getDate() - day + (day === 0 ? -6 : 1); // Monday
+    const monday = new Date(current.setDate(diff));
+
+    const days = [];
+    for (let i = 0; i < 7; i++) {
+      const d = new Date(monday);
+      d.setDate(monday.getDate() + i);
+      days.push(d);
+    }
+    return days;
+  }, [selectedDate]);
+
+  const formattedSelectedDate = useMemo(() => {
+    const s = selectedDate.toLocaleDateString('es-AR', {
+      weekday: 'long',
+      day: 'numeric',
+      month: 'long',
+    });
+    return s.charAt(0).toUpperCase() + s.slice(1);
+  }, [selectedDate]);
+
+  const isToday = useMemo(() => {
+    return getLocalDateKey(selectedDate) === getLocalDateKey(new Date());
+  }, [selectedDate]);
 
   // Date Navigation
   const handlePrevDay = () => {
@@ -375,10 +406,213 @@ export const CalendarPage: React.FC = () => {
     }
   };
 
+  const renderMobileStatusBadge = (status: AppointmentStatus) => {
+    switch (status) {
+      case 'completed':
+        return (
+          <span className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-stone-100 text-stone-600 border border-stone-200">
+            Finalizado
+          </span>
+        );
+      case 'confirmed':
+      case 'checked_in':
+        return (
+          <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-800 border border-emerald-200">
+            Confirmado
+          </span>
+        );
+      case 'in_progress':
+        return (
+          <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-50 text-amber-900 border border-amber-200 animate-pulse">
+            En atención
+          </span>
+        );
+      case 'cancelled':
+        return (
+          <span className="px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-50 text-red-700 border border-red-200">
+            Cancelado
+          </span>
+        );
+      default:
+        return (
+          <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-[#FEF6E7] text-[#96680C] border border-[#E8CDA8]/60">
+            Pendiente
+          </span>
+        );
+    }
+  };
+
   return (
     <div className="space-y-5">
-      {/* Rubro & Account Identification Banner (Minimal & Sleek) */}
-      <RubroAccountBanner />
+      {/* MOBILE-ONLY VIEW (SCREEN 1 MOCKUP) */}
+      <div className="md:hidden space-y-3.5">
+        {/* Title & Share link */}
+        <div className="flex items-center justify-between">
+          <h1 className="text-2xl font-bold text-[#24352C] tracking-tight">Agenda</h1>
+          <button
+            type="button"
+            onClick={() => {
+              const url = `${window.location.origin}/reserva/${currentOrg.slug}`;
+              navigator.clipboard.writeText(url);
+              setCopiedLink(true);
+              setTimeout(() => setCopiedLink(false), 2500);
+            }}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-[#E8E2D8] bg-white text-xs font-semibold text-[#24352C] shadow-2xs hover:bg-[#FAF8F2] transition cursor-pointer"
+          >
+            {copiedLink ? (
+              <>
+                <Check className="w-3.5 h-3.5 text-emerald-600" />
+                <span className="text-emerald-700 font-bold">¡Copiado!</span>
+              </>
+            ) : (
+              <>
+                <Share2 className="w-3.5 h-3.5 text-[#28634C]" />
+                <span>Compartir link</span>
+              </>
+            )}
+          </button>
+        </div>
+
+        {/* Date Navigation Header */}
+        <div className="flex items-center justify-between py-1">
+          <button
+            type="button"
+            onClick={handlePrevDay}
+            className="w-8 h-8 rounded-full border border-[#E8E2D8] bg-white hover:bg-[#FAF8F2] flex items-center justify-center text-[#24352C] shadow-2xs cursor-pointer"
+          >
+            <ChevronLeft className="w-4 h-4" />
+          </button>
+          <span className="font-bold text-sm text-[#24352C]">
+            {formattedSelectedDate}
+          </span>
+          <button
+            type="button"
+            onClick={handleNextDay}
+            className="w-8 h-8 rounded-full border border-[#E8E2D8] bg-white hover:bg-[#FAF8F2] flex items-center justify-center text-[#24352C] shadow-2xs cursor-pointer"
+          >
+            <ChevronRight className="w-4 h-4" />
+          </button>
+        </div>
+
+        {/* 7-day strip */}
+        <div className="grid grid-cols-7 gap-1 bg-white p-1 rounded-2xl border border-[#E8E2D8] shadow-2xs">
+          {weekDays.map((d) => {
+            const isSelected = getLocalDateKey(d) === selectedDateStr;
+            const dayNames = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+            const name = dayNames[d.getDay()];
+            const num = d.getDate();
+
+            return (
+              <button
+                key={d.toISOString()}
+                type="button"
+                onClick={() => setSelectedDate(d)}
+                className={`py-2 px-1 rounded-xl flex flex-col items-center justify-center transition cursor-pointer ${
+                  isSelected
+                    ? 'bg-[#28634C] text-white shadow-xs font-bold'
+                    : 'text-[#5E7166] hover:bg-[#FAF8F2]'
+                }`}
+              >
+                <span className={`text-[10px] uppercase font-medium ${isSelected ? 'text-white/80' : 'text-[#5E7166]'}`}>
+                  {name}
+                </span>
+                <span className={`text-sm mt-0.5 font-bold ${isSelected ? 'text-white' : 'text-[#24352C]'}`}>
+                  {num}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Professional Filter Dropdown */}
+        <div className="relative">
+          <select
+            value={selectedProfFilter}
+            onChange={(e) => setSelectedProfFilter(e.target.value)}
+            className="w-full bg-white border border-[#E8E2D8] rounded-xl px-4 py-3 text-xs font-semibold text-[#24352C] appearance-none focus:outline-[#28634C] shadow-2xs cursor-pointer"
+          >
+            <option value="all">Todos los profesionales</option>
+            {branchProfessionals.map((p) => (
+              <option key={p.id} value={p.id}>
+                {p.display_name}
+              </option>
+            ))}
+          </select>
+          <ChevronDown className="w-4 h-4 text-[#5E7166] absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+        </div>
+
+        {/* Counter */}
+        <div className="text-xs text-[#5E7166] font-medium pt-1">
+          {filteredAppointments.length} {filteredAppointments.length === 1 ? 'turno' : 'turnos'} · {isToday ? 'Hoy' : 'Día seleccionado'}
+        </div>
+
+        {/* Appointment Cards */}
+        <div className="space-y-2.5 pb-24">
+          {filteredAppointments.length === 0 ? (
+            <div className="bg-white rounded-2xl border border-[#E8E2D8] p-8 text-center text-xs text-[#5E7166] space-y-2">
+              <CalendarIcon className="w-8 h-8 text-[#5E7166]/40 mx-auto" />
+              <p className="font-semibold text-sm text-[#24352C]">Sin turnos para este día</p>
+              <p className="text-xs">Podés agendar uno tocando en &quot;+ Nuevo turno&quot;.</p>
+            </div>
+          ) : (
+            filteredAppointments.map((appt) => {
+              const cust = customers.find((c) => c.id === appt.customer_id);
+              const prof = professionals.find((p) => p.id === appt.professional_id);
+              const srv = services.find((s) => s.duration_minutes === appt.service_duration_minutes) || appt.service;
+              const startTime = new Date(appt.starts_at).toLocaleTimeString('es-AR', {
+                hour: '2-digit',
+                minute: '2-digit',
+              });
+
+              return (
+                <div
+                  key={appt.id}
+                  onClick={() => setActiveAppointment(appt)}
+                  className="bg-white rounded-2xl p-3.5 border border-[#E8E2D8] flex items-center justify-between gap-3 shadow-2xs hover:border-[#28634C]/40 transition cursor-pointer"
+                >
+                  <div className="flex items-center gap-3.5 min-w-0">
+                    <span className="font-bold text-sm text-[#24352C] shrink-0 font-mono">
+                      {startTime}
+                    </span>
+                    <div className="min-w-0">
+                      <h4 className="font-bold text-sm text-[#24352C] truncate">
+                        {cust?.full_name || 'Cliente'}
+                      </h4>
+                      <p className="text-xs text-[#5E7166] truncate mt-0.5">
+                        {srv?.name || 'Servicio'}
+                      </p>
+                      <p className="text-[11px] text-[#5E7166]/80 truncate">
+                        {prof?.display_name || 'Profesional'} · {appt.service_duration_minutes || 30} min
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="shrink-0">
+                    {renderMobileStatusBadge(appt.status)}
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </div>
+
+        {/* Floating + Nuevo Turno button */}
+        <div className="fixed bottom-18 left-0 right-0 px-4 z-30 pointer-events-none">
+          <button
+            type="button"
+            onClick={() => setShowNewModal(true)}
+            className="w-full py-3.5 px-4 rounded-2xl bg-[#28634C] hover:bg-[#1E4E3B] text-white font-bold text-sm shadow-xl flex items-center justify-center gap-2 pointer-events-auto transition cursor-pointer active:scale-98"
+          >
+            <Plus className="w-4 h-4 text-[#E8CDA8]" />
+            <span>+ Nuevo turno</span>
+          </button>
+        </div>
+      </div>
+
+      {/* DESKTOP-ONLY VIEW */}
+      <div className="hidden md:block space-y-5">
+        {/* Rubro & Account Identification Banner (Minimal & Sleek) */}
+        <RubroAccountBanner />
 
       {/* Active In-Progress Turno Sticky Widget */}
       {inProgressAppointments.length > 0 && (
@@ -956,6 +1190,7 @@ export const CalendarPage: React.FC = () => {
           </div>
         </div>
       )}
+      </div>
 
       {/* MODAL: MANUAL NEW APPOINTMENT */}
       {showNewModal && (
