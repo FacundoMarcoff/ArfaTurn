@@ -16,6 +16,8 @@ import {
   Store,
   ChevronDown,
   MoreHorizontal,
+  Clock,
+  Check,
 } from 'lucide-react';
 import { useTenant } from '../../lib/store/tenant-context';
 import { getIndustryInfo } from '../../lib/constants/industries';
@@ -31,6 +33,14 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
 
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
+
+  const getInitials = (name: string) => {
+    if (!name) return 'U';
+    const parts = name.trim().split(/\s+/);
+    if (parts.length >= 2) return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
+    return name.slice(0, 2).toUpperCase();
+  };
 
   // 1. Guard: Si no hay usuario autenticado, redirigir directo al login
   if (!currentUser) {
@@ -38,7 +48,6 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
   }
 
   // 2. Guard: Si es Super Admin, SOLO puede estar en la consola de cuentas (/admin/accounts)
-  // El administrador NO ve turnos ni datos internos de las cuentas
   if (currentUser.is_superadmin && location.pathname !== '/admin/accounts') {
     return <Navigate to="/admin/accounts" replace />;
   }
@@ -57,7 +66,7 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
     badge?: string;
   }
 
-  // Menú exclusivo según el rol - Lenguaje simple y claro para cualquier usuario
+  // Menú según el diseño del mockup: Agenda, Clientes, Caja y cobros, etc.
   const navItems: LayoutNavItem[] = currentUser.is_superadmin
     ? [
         {
@@ -68,21 +77,113 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
         },
       ]
     : [
-        { name: 'Turnos y Agenda', href: '/admin/calendar', icon: Calendar },
-        { name: 'Mis Clientes', href: '/admin/clients', icon: Users },
-        { name: 'Caja y Cobros', href: '/admin/sales', icon: ReceiptText },
-        { name: 'Servicios y Precios', href: '/admin/services', icon: Scissors },
-        { name: 'Mi Equipo', href: '/admin/team', icon: ShieldCheck },
-        { name: 'Productos y Stock', href: '/admin/inventory', icon: Package },
-        { name: 'Horarios del Local', href: '/admin/branches', icon: Building2 },
+        { name: 'Agenda', href: '/admin/calendar', icon: Calendar },
+        { name: 'Clientes', href: '/admin/clients', icon: Users },
+        { name: 'Caja y cobros', href: '/admin/sales', icon: ReceiptText },
+        { name: 'Servicios y precios', href: '/admin/services', icon: Scissors },
+        { name: 'Equipo', href: '/admin/team', icon: ShieldCheck },
+        { name: 'Productos y stock', href: '/admin/inventory', icon: Package },
+        { name: 'Local y horarios', href: '/admin/branches', icon: Clock },
       ];
 
   return (
-    <div className="min-h-screen bg-[#FAF8F2] flex flex-col text-[#24352C] font-sans selection:bg-[#E8CDA8]/40 selection:text-[#24352C]">
-      {/* Top Navbar */}
-      <header className="sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-[#E8E2D8]">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
-          {/* Mobile-only header (Exact mockup layout) */}
+    <div className="min-h-screen bg-[#FAF8F2] flex text-[#24352C] font-sans selection:bg-[#E8CDA8]/40 selection:text-[#24352C]">
+      {/* DESKTOP SIDEBAR (Left Full-Height Bar as in Mockup) */}
+      <aside className="hidden lg:flex w-64 shrink-0 bg-white border-r border-[#E8E2D8] flex-col justify-between h-screen sticky top-0 z-30">
+        <div className="p-4 space-y-6">
+          {/* Logo & Brand Name */}
+          <Link
+            to={currentUser.is_superadmin ? '/admin/accounts' : '/admin/calendar'}
+            className="flex items-center gap-2.5 px-2 py-1 group"
+          >
+            <div className="w-8 h-8 rounded-xl bg-[#28634C] text-white flex items-center justify-center shadow-xs">
+              <Calendar className="w-4 h-4" />
+            </div>
+            <div className="flex items-baseline tracking-tight">
+              <span className="font-extrabold text-lg text-[#24352C]">Tu</span>
+              <span className="font-extrabold text-lg text-[#28634C] ml-1">Turnito</span>
+            </div>
+          </Link>
+
+          {/* Navigation Links */}
+          <nav className="space-y-1">
+            {navItems.map((item) => {
+              const Icon = item.icon;
+              const isActive = location.pathname.startsWith(item.href);
+              return (
+                <Link
+                  key={item.href}
+                  to={item.href}
+                  className={`flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-semibold transition ${
+                    isActive
+                      ? 'bg-[#EAF2EC] text-[#28634C] font-bold shadow-2xs'
+                      : 'text-[#5E7166] hover:bg-[#FAF8F2] hover:text-[#24352C]'
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-[#28634C]' : 'text-[#5E7166]'}`} />
+                    <span>{item.name}</span>
+                  </div>
+                  {item.badge && (
+                    <span className="text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded-md bg-amber-100 text-amber-800">
+                      {item.badge}
+                    </span>
+                  )}
+                </Link>
+              );
+            })}
+          </nav>
+        </div>
+
+        {/* Bottom Profile in Sidebar */}
+        <div className="p-3 border-t border-[#E8E2D8] space-y-2">
+          <OfflineIndicator />
+
+          <div className="relative">
+            <button
+              onClick={() => setUserMenuOpen(!userMenuOpen)}
+              className="w-full flex items-center justify-between p-2 rounded-xl hover:bg-[#FAF8F2] transition cursor-pointer text-left"
+            >
+              <div className="flex items-center gap-2.5 min-w-0">
+                <div className="w-9 h-9 rounded-full bg-[#E5E0D8] text-[#24352C] font-bold text-xs flex items-center justify-center shrink-0">
+                  {getInitials(currentUser.full_name)}
+                </div>
+                <div className="min-w-0">
+                  <p className="text-xs font-bold text-[#24352C] truncate">
+                    {currentUser.full_name}
+                  </p>
+                  <p className="text-[11px] text-[#5E7166] truncate capitalize">
+                    {currentUser.role || 'Administrador'}
+                  </p>
+                </div>
+              </div>
+              <ChevronDown className="w-3.5 h-3.5 text-[#5E7166] shrink-0" />
+            </button>
+
+            {/* User Dropdown */}
+            {userMenuOpen && (
+              <div className="absolute bottom-full left-0 right-0 mb-2 bg-white rounded-2xl border border-[#E8E2D8] p-2 shadow-xl z-50 space-y-1">
+                <button
+                  onClick={() => {
+                    setUserMenuOpen(false);
+                    logout();
+                  }}
+                  className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold text-red-600 hover:bg-red-50 transition cursor-pointer"
+                >
+                  <LogOut className="w-3.5 h-3.5" />
+                  <span>Cerrar Sesión</span>
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      </aside>
+
+      {/* RIGHT MAIN AREA (Top bar + Page content) */}
+      <div className="flex-1 flex flex-col min-w-0 min-h-screen">
+        {/* Top Header */}
+        <header className="sticky top-0 z-20 bg-white/95 backdrop-blur-md border-b border-[#E8E2D8] px-4 sm:px-6 lg:px-8 h-14 flex items-center justify-between gap-4">
+          {/* Mobile-only header view */}
           <div className="lg:hidden flex items-center justify-between w-full">
             <div className="flex flex-col text-left min-w-0">
               <span className="font-bold text-base text-[#24352C] leading-tight tracking-tight truncate">
@@ -107,116 +208,36 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
             </button>
           </div>
 
-          {/* Desktop header */}
-          <div className="hidden lg:flex items-center gap-3">
-            {/* Brand Logo & Name */}
-            <Link
-              to={currentUser.is_superadmin ? '/admin/accounts' : '/admin/calendar'}
-              className="flex items-center gap-2.5 group"
-            >
-              <div className="w-8 h-8 rounded-xl bg-[#28634C] text-[#FAF8F2] flex items-center justify-center font-serif font-bold text-sm shadow-xs">
-                TP
-              </div>
-              <span className="font-bold text-lg tracking-tight text-[#24352C]">
-                Turno<span className="text-[#28634C] font-normal">Pro</span>
-              </span>
-            </Link>
-
-            {/* Indicator según tipo de usuario */}
-            {currentUser.is_superadmin ? (
-              <div className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1.5 rounded-xl border border-amber-300 bg-amber-50 text-xs font-bold text-amber-800">
-                <Crown className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-                <span className="truncate max-w-[140px] sm:max-w-none">Super Admin</span>
-              </div>
-            ) : (
-              <div className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1.5 rounded-xl border border-[#E8E2D8] bg-[#FAF8F2] text-xs sm:text-sm font-semibold text-[#24352C] min-w-0">
-                <Store className="w-3.5 h-3.5 text-[#28634C] shrink-0" />
-                <span className="font-bold truncate max-w-[120px] sm:max-w-[200px] md:max-w-none">{currentOrg.name}</span>
-                <span className="hidden md:inline-flex text-[10px] px-2 py-0.5 rounded-md border border-[#E8CDA8]/60 bg-[#F7EFE4] text-[#28634C] font-bold">
-                  {industryInfo.emoji} {industryInfo.name.split(' ')[0]}
-                </span>
-              </div>
-            )}
-          </div>
-
-          {/* Right Header items (Desktop only) */}
-          <div className="hidden lg:flex items-center gap-3">
-            {/* User display */}
-            <div className="flex items-center gap-2.5 p-1 pl-2.5 rounded-xl bg-[#FAF8F2] border border-[#E8E2D8] text-xs">
-              <div className="w-7 h-7 rounded-lg bg-[#28634C] text-[#FAF8F2] flex items-center justify-center font-bold text-xs shrink-0 shadow-2xs">
-                {currentUser.full_name.charAt(0)}
-              </div>
-              <div className="text-left pr-1">
-                <div className="font-bold text-[#24352C] leading-tight">
-                  {currentUser.full_name}
-                </div>
-                <div className="text-[10px] text-[#5E7166] font-mono">
-                  @{currentUser.username}
-                </div>
-              </div>
+          {/* Desktop-only breadcrumb header (Exact Mockup: Estilo / Sucursal Central ⌵  ...  (M) ⌵) */}
+          <div className="hidden lg:flex items-center justify-between w-full">
+            <div className="flex items-center gap-2 text-xs">
+              <span className="font-bold text-sm text-[#24352C]">{currentOrg.name}</span>
+              <span className="text-[#CCD6D0]">/</span>
+              <button
+                type="button"
+                className="flex items-center gap-1 font-medium text-xs text-[#5E7166] hover:text-[#24352C] cursor-pointer"
+              >
+                <span>{currentBranch.name}</span>
+                <ChevronDown className="w-3 h-3 text-[#5E7166]" />
+              </button>
             </div>
 
-            {/* Logout button */}
-            <button
-              onClick={() => logout()}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-[#E8E2D8] bg-white hover:bg-red-50 hover:border-red-200 text-[#5E7166] hover:text-red-600 text-xs font-semibold transition cursor-pointer"
-              title="Cerrar sesión"
-            >
-              <LogOut className="w-3.5 h-3.5" />
-              <span>Cerrar Sesión</span>
-            </button>
-          </div>
-        </div>
-      </header>
-
-      {/* Main Container */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 w-full flex-1 flex gap-6">
-        {/* Desktop Sidebar Navigation */}
-        <aside className="hidden lg:block w-64 shrink-0">
-          <div className="sticky top-24 space-y-4">
-            <div className="bg-white rounded-3xl border border-[#E8E2D8] p-3 shadow-xs">
-              <div className="px-3 py-2 text-[10px] font-bold text-[#5E7166] uppercase tracking-wider">
-                {currentUser.is_superadmin ? 'Super Admin' : 'Panel del Negocio'}
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-1.5 cursor-pointer" onClick={() => setUserMenuOpen(!userMenuOpen)}>
+                <div className="w-8 h-8 rounded-full bg-[#E5E0D8] text-[#24352C] font-bold text-xs flex items-center justify-center shadow-2xs">
+                  {currentUser.full_name.charAt(0)}
+                </div>
+                <ChevronDown className="w-3 h-3 text-[#5E7166]" />
               </div>
-              <nav className="space-y-1">
-                {navItems.map((item) => {
-                  const Icon = item.icon;
-                  const isActive = location.pathname.startsWith(item.href);
-                  return (
-                    <Link
-                      key={item.href}
-                      to={item.href}
-                      className={`flex items-center justify-between px-3.5 py-2.5 rounded-2xl text-xs font-semibold transition ${
-                        isActive
-                          ? 'bg-[#28634C] text-white shadow-xs'
-                          : 'text-[#24352C] hover:bg-[#FAF8F2] hover:text-[#28634C]'
-                      }`}
-                    >
-                      <div className="flex items-center gap-3">
-                        <Icon className="w-4 h-4 shrink-0" />
-                        <span>{item.name}</span>
-                      </div>
-                      {item.badge && (
-                        <span
-                          className={`text-[9px] font-extrabold uppercase px-1.5 py-0.5 rounded-md ${
-                            isActive
-                              ? 'bg-white/20 text-white'
-                              : 'bg-amber-100 text-amber-800'
-                          }`}
-                        >
-                          {item.badge}
-                        </span>
-                      )}
-                    </Link>
-                  );
-                })}
-              </nav>
             </div>
-
-            {/* Offline status indicator */}
-            <OfflineIndicator />
           </div>
-        </aside>
+        </header>
+
+        {/* Page Content Container */}
+        <main className={`flex-1 min-w-0 p-4 sm:p-6 lg:p-8 max-w-7xl w-full mx-auto ${currentUser.is_superadmin ? '' : 'pb-24 lg:pb-8'}`}>
+          {children}
+        </main>
+      </div>
 
         {/* Mobile Navigation Drawer */}
         {mobileMenuOpen && (
@@ -280,12 +301,6 @@ export const AppLayout: React.FC<{ children: React.ReactNode }> = ({ children })
             </div>
           </div>
         )}
-
-        {/* Workspace Content */}
-        <main className={`flex-1 min-w-0 ${currentUser.is_superadmin ? '' : 'pb-20 lg:pb-0'}`}>
-          {children}
-        </main>
-      </div>
 
       {/* Mobile Bottom Navigation Bar (Exact 4 items from mockup) */}
       {!currentUser.is_superadmin && (

@@ -609,587 +609,350 @@ export const CalendarPage: React.FC = () => {
         </div>
       </div>
 
-      {/* DESKTOP-ONLY VIEW */}
-      <div className="hidden md:block space-y-5">
-        {/* Rubro & Account Identification Banner (Minimal & Sleek) */}
-        <RubroAccountBanner />
+      {/* DESKTOP-ONLY VIEW: SCREEN 01 (Agenda - Versión escritorio) */}
+      <div className="hidden md:block space-y-4">
+        {/* Row 1: Header (Title + Actions) */}
+        <div className="flex items-center justify-between">
+          <h1 className="text-2xl font-extrabold text-[#24352C] tracking-tight">
+            Agenda
+          </h1>
 
-      {/* Active In-Progress Turno Sticky Widget */}
-      {inProgressAppointments.length > 0 && (
-        <div className="space-y-3">
-          {inProgressAppointments.map((inProgAppt) => {
-            const cust = customers.find((c) => c.id === inProgAppt.customer_id);
-            const prof = professionals.find((p) => p.id === inProgAppt.professional_id);
-            const srv =
-              services.find((s) => s.duration_minutes === inProgAppt.service_duration_minutes) ||
-              inProgAppt.service;
-            const timing = getTurnoTiming(inProgAppt);
-
-            return (
-              <div
-                key={inProgAppt.id}
-                className="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-[#28634C] to-[#1E4535] text-white shadow-md border border-[#E8CDA8]/40 flex flex-col md:flex-row md:items-center justify-between gap-4 animate-in fade-in"
-              >
-                <div className="flex items-center gap-3.5">
-                  <div className="w-12 h-12 rounded-2xl bg-white/15 flex items-center justify-center shrink-0 border border-white/20">
-                    <Scissors className="w-6 h-6 text-[#E8CDA8] animate-pulse" />
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-white/20 text-[#E8CDA8]">
-                        <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
-                        Turno en curso
-                      </span>
-                      <span className="text-xs text-white/80">
-                        {prof?.display_name ? `Atiende ${prof.display_name}` : 'En atención'}
-                      </span>
-                    </div>
-                    <h3 className="font-bold text-base text-white tracking-tight mt-0.5">
-                      {cust?.full_name || 'Cliente'} — {srv?.name || 'Servicio'}
-                    </h3>
-                    <p className="text-xs text-white/70">
-                      Duración estimada: {timing.durationMinutes} min • {cust?.phone}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 shrink-0">
-                  {/* Digital Timer */}
-                  <div className="bg-white/10 px-4 py-2.5 rounded-xl border border-white/15 flex items-center gap-3">
-                    <Timer className="w-5 h-5 text-[#E8CDA8]" />
-                    <div>
-                      <div className="text-[10px] uppercase font-bold text-white/70 tracking-wider">
-                        {timing.isOverTime ? 'Tiempo excedido' : 'Tiempo restante'}
-                      </div>
-                      <div className="text-xl font-bold font-mono tracking-wider tabular-nums text-white">
-                        {timing.isOverTime ? `+${timing.formattedOvertime}` : timing.formattedRemaining}
-                      </div>
-                    </div>
-                    {/* Progress pill */}
-                    <div className="w-14 bg-white/20 h-2 rounded-full overflow-hidden">
-                      <div
-                        className={`h-full transition-all duration-1000 ${
-                          timing.isOverTime ? 'bg-amber-400' : 'bg-[#E8CDA8]'
-                        }`}
-                        style={{ width: `${timing.pct}%` }}
-                      />
-                    </div>
-                  </div>
-
-                  {/* Actions */}
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <button
-                      type="button"
-                      onClick={() => setActiveFocusAppt(inProgAppt)}
-                      className="px-3.5 py-2.5 rounded-xl bg-white/20 hover:bg-white/30 text-white font-bold text-xs border border-white/25 transition cursor-pointer flex items-center gap-1.5 shadow-2xs"
-                      title="Abrir vista exclusiva para celular"
-                    >
-                      <span>📱 Pantalla de atención</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleAddMinutes(inProgAppt.id, 5)}
-                      className="px-3 py-2.5 rounded-xl bg-white/15 hover:bg-white/25 text-white text-xs font-semibold border border-white/20 transition cursor-pointer"
-                      title="Extender 5 minutos más"
-                    >
-                      +5 min
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleOpenFinishModal(inProgAppt)}
-                      className="px-5 py-2.5 rounded-xl bg-[#E8CDA8] hover:bg-[#dfc097] text-[#24352C] font-bold text-xs shadow-sm transition hover:shadow active:scale-98 cursor-pointer flex items-center gap-1.5"
-                    >
-                      <CheckCircle2 className="w-4 h-4 text-[#28634C]" />
-                      <span>Ya terminé</span>
-                    </button>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
-
-      {/* Unified Toolbar: Date, Filters & Actions in a Single Clear Layout */}
-      <div className="bg-white rounded-2xl border border-[#E8E2D8] p-4 shadow-xs space-y-3 sm:space-y-0 sm:flex sm:items-center sm:justify-between gap-4">
-        {/* Left: View Mode Toggle & Date Navigation */}
-        <div className="flex items-center gap-2 flex-wrap">
-          <div className="flex items-center bg-[#FAF8F2] p-1 rounded-xl border border-[#E8E2D8] text-xs font-semibold">
+          <div className="flex items-center gap-2.5">
             <button
               type="button"
-              onClick={() => setViewMode('day')}
-              className={`px-3 py-1.5 rounded-lg transition cursor-pointer flex items-center gap-1.5 ${
-                viewMode === 'day'
-                  ? 'bg-white text-[#28634C] shadow-2xs font-bold'
-                  : 'text-[#5E7166] hover:text-[#24352C]'
-              }`}
+              onClick={() => {
+                const url = `${window.location.origin}/reservar/${currentOrg.slug}`;
+                navigator.clipboard.writeText(url);
+                setCopiedLink(true);
+                setTimeout(() => setCopiedLink(false), 2500);
+              }}
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-[#CCD6D0] bg-white hover:bg-[#FAF8F2] text-xs font-semibold text-[#24352C] transition shadow-2xs cursor-pointer"
             >
-              <CalendarIcon className="w-3.5 h-3.5" />
-              <span>Día</span>
+              {copiedLink ? (
+                <>
+                  <Check className="w-3.5 h-3.5 text-emerald-600" />
+                  <span className="text-emerald-700 font-bold">¡Copiado!</span>
+                </>
+              ) : (
+                <>
+                  <Share2 className="w-3.5 h-3.5 text-[#28634C]" />
+                  <span>Compartir link</span>
+                </>
+              )}
             </button>
+
             <button
               type="button"
-              onClick={() => setViewMode('list')}
-              className={`px-3 py-1.5 rounded-lg transition cursor-pointer flex items-center gap-1.5 ${
-                viewMode === 'list'
-                  ? 'bg-white text-[#28634C] shadow-2xs font-bold'
-                  : 'text-[#5E7166] hover:text-[#24352C]'
-              }`}
+              onClick={() => setShowNewModal(true)}
+              className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#28634C] hover:bg-[#1E4E3B] text-white text-xs font-bold shadow-xs transition cursor-pointer"
             >
-              <List className="w-3.5 h-3.5" />
-              <span>Todos ({appointments.filter((a) => a.organization_id === currentOrg.id && a.branch_id === currentBranch.id && a.status !== 'cancelled').length})</span>
+              <Plus className="w-4 h-4 text-[#E8CDA8]" />
+              <span>+ Nuevo turno</span>
             </button>
           </div>
+        </div>
 
-          {viewMode === 'day' && (
-            <div className="flex items-center gap-1">
+        {/* Row 2: Secondary Toolbar (Date navigator + Hoy + View Mode + Professional Select) */}
+        <div className="flex items-center justify-between flex-wrap gap-3 pt-1">
+          {/* Left: Date navigator & Hoy button */}
+          <div className="flex items-center gap-2">
+            <div className="flex items-center bg-white border border-[#E8E2D8] rounded-xl px-2 py-1 shadow-2xs">
               <button
                 type="button"
                 onClick={handlePrevDay}
-                className="p-1.5 rounded-xl border border-[#E8E2D8] hover:bg-[#FAF8F2] transition cursor-pointer text-[#24352C]"
+                className="p-1 rounded-lg hover:bg-[#FAF8F2] text-[#5E7166] transition cursor-pointer"
                 title="Día anterior"
               >
                 <ChevronLeft className="w-4 h-4" />
               </button>
-              <button
-                type="button"
-                onClick={handleToday}
-                className="px-2.5 py-1.5 rounded-xl border border-[#E8E2D8] text-xs font-semibold hover:bg-[#FAF8F2] transition cursor-pointer text-[#24352C]"
-              >
-                Hoy
-              </button>
+              <span className="font-bold text-xs sm:text-sm text-[#24352C] px-3 select-none">
+                {selectedDate.toLocaleDateString('es-AR', {
+                  weekday: 'long',
+                  day: 'numeric',
+                  month: 'long',
+                  year: 'numeric',
+                }).replace(/^./, (str) => str.toUpperCase())}
+              </span>
               <button
                 type="button"
                 onClick={handleNextDay}
-                className="p-1.5 rounded-xl border border-[#E8E2D8] hover:bg-[#FAF8F2] transition cursor-pointer text-[#24352C]"
+                className="p-1 rounded-lg hover:bg-[#FAF8F2] text-[#5E7166] transition cursor-pointer"
                 title="Día siguiente"
               >
                 <ChevronRight className="w-4 h-4" />
               </button>
-
-              <input
-                type="date"
-                value={selectedDateStr}
-                onChange={(e) => {
-                  if (e.target.value) {
-                    const [y, m, d] = e.target.value.split('-').map(Number);
-                    setSelectedDate(new Date(y, m - 1, d, 12, 0, 0));
-                  }
-                }}
-                className="text-xs bg-[#FAF8F2] border border-[#E8E2D8] rounded-xl px-2.5 py-1.5 text-[#24352C] cursor-pointer font-medium ml-1"
-              />
             </div>
-          )}
-        </div>
 
-        {/* Right: Professional Filter + Link + New Appointment */}
-        <div className="flex items-center gap-2 flex-wrap">
-          <select
-            value={selectedProfFilter}
-            onChange={(e) => setSelectedProfFilter(e.target.value)}
-            className="bg-[#FAF8F2] border border-[#E8E2D8] text-xs font-medium rounded-xl px-3 py-2 text-[#24352C] focus:outline-[#28634C]"
-          >
-            <option value="all">Todos los profesionales ({branchProfessionals.length})</option>
-            {branchProfessionals.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.display_name}
-              </option>
-            ))}
-          </select>
+            <button
+              type="button"
+              onClick={handleToday}
+              className="px-3 py-1.5 rounded-xl border border-[#E8E2D8] bg-white text-xs font-semibold text-[#24352C] hover:bg-[#FAF8F2] shadow-2xs transition cursor-pointer"
+            >
+              Hoy
+            </button>
 
-          {/* Quick Copy Turnero */}
-          <button
-            type="button"
-            onClick={() => {
-              const url = `${window.location.origin}/reservar/${currentOrg.slug}`;
-              navigator.clipboard.writeText(url);
-              setCopiedLink(true);
-              setTimeout(() => setCopiedLink(false), 2500);
-            }}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-[#E8E2D8] bg-[#FAF8F2] hover:bg-[#F2ECE4] text-xs font-semibold text-[#24352C] transition cursor-pointer"
-            title="Copiar link para enviar a clientes"
-          >
-            {copiedLink ? (
-              <>
-                <Check className="w-3.5 h-3.5 text-emerald-600" />
-                <span className="text-emerald-700 font-bold">¡Copiado!</span>
-              </>
-            ) : (
-              <>
-                <Copy className="w-3.5 h-3.5 text-[#5E7166]" />
-                <span>Link Turnero</span>
-              </>
-            )}
-          </button>
-
-          <a
-            href={`/reservar/${currentOrg.slug}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="p-2 rounded-xl border border-[#E8E2D8] bg-[#FAF8F2] hover:bg-[#F2ECE4] text-[#5E7166] hover:text-[#28634C] transition"
-            title="Abrir turnero web público"
-          >
-            <ExternalLink className="w-3.5 h-3.5" />
-          </a>
-
-          {/* Primary Action Button */}
-          <button
-            type="button"
-            onClick={() => setShowNewModal(true)}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#28634C] hover:bg-[#1E4E3B] text-white font-semibold text-xs shadow-xs transition cursor-pointer"
-          >
-            <Plus className="w-4 h-4 text-[#E8CDA8]" />
-            <span>Nuevo Turno</span>
-          </button>
-        </div>
-      </div>
-
-      {actionMessage && (
-        <div
-          className={`p-3.5 rounded-2xl text-xs flex items-center justify-between border ${
-            actionMessage.type === 'success'
-              ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
-              : 'bg-red-50 text-red-800 border-red-200'
-          }`}
-        >
-          <div className="flex items-center gap-2">
-            {actionMessage.type === 'success' ? <CheckCircle className="w-4 h-4 text-emerald-600" /> : <AlertCircle className="w-4 h-4 text-red-600" />}
-            <span>{actionMessage.text}</span>
-          </div>
-          <button onClick={() => setActionMessage(null)} className="font-bold underline text-xs cursor-pointer">
-            Cerrar
-          </button>
-        </div>
-      )}
-
-      {/* Gentle notice for appointments on other dates */}
-      {otherDateAppointments.length > 0 && viewMode === 'day' && (
-        <div className="p-3 bg-[#F7EFE4] border border-[#E8CDA8]/60 rounded-2xl text-xs text-[#24352C] flex items-center justify-between gap-2 shadow-2xs">
-          <div className="flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-[#28634C] shrink-0" />
-            <span>
-              Tenés <strong>{otherDateAppointments.length} {otherDateAppointments.length === 1 ? 'turno agendado' : 'turnos agendados'}</strong> para otros días.
-            </span>
-          </div>
-          <button
-            type="button"
-            onClick={() => setViewMode('list')}
-            className="text-xs font-bold text-[#28634C] underline hover:opacity-80 cursor-pointer"
-          >
-            Ver todos los turnos →
-          </button>
-        </div>
-      )}
-
-      {/* Main Agenda View: Columns by Professional */}
-      {viewMode === 'day' ? (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {(selectedProfFilter === 'all'
-            ? branchProfessionals
-            : branchProfessionals.filter((p) => p.id === selectedProfFilter)
-          ).map((prof) => {
-            const profAppointments = filteredAppointments.filter((a) => a.professional_id === prof.id);
-
-            return (
-              <div
-                key={prof.id}
-                className="bg-white dark:bg-[#201D1B] rounded-2xl border border-[#E8E2D8] dark:border-[#2D2825] shadow-xs flex flex-col overflow-hidden"
+            {/* View Mode Pills */}
+            <div className="flex items-center bg-white p-0.5 rounded-xl border border-[#E8E2D8] shadow-2xs ml-1">
+              <button
+                type="button"
+                onClick={() => setViewMode('day')}
+                className={`px-3 py-1 rounded-lg text-xs transition cursor-pointer ${
+                  viewMode === 'day'
+                    ? 'bg-[#EAF2EC] text-[#28634C] font-bold'
+                    : 'text-[#5E7166] hover:text-[#24352C]'
+                }`}
               >
-                {/* Column Header */}
+                Día
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewMode('day')}
+                className="px-3 py-1 rounded-lg text-xs text-[#5E7166] hover:text-[#24352C] transition cursor-pointer"
+              >
+                Semana
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewMode('list')}
+                className={`px-3 py-1 rounded-lg text-xs transition cursor-pointer ${
+                  viewMode === 'list'
+                    ? 'bg-[#EAF2EC] text-[#28634C] font-bold'
+                    : 'text-[#5E7166] hover:text-[#24352C]'
+                }`}
+              >
+                Lista
+              </button>
+            </div>
+          </div>
+
+          {/* Right: Professional Dropdown Filter */}
+          <div className="relative">
+            <select
+              value={selectedProfFilter}
+              onChange={(e) => setSelectedProfFilter(e.target.value)}
+              className="bg-white border border-[#CCD6D0] text-xs font-semibold rounded-xl pl-3 pr-8 py-2 text-[#24352C] appearance-none focus:outline-[#28634C] shadow-2xs cursor-pointer"
+            >
+              <option value="all">Todos los profesionales</option>
+              {branchProfessionals.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.display_name}
+                </option>
+              ))}
+            </select>
+            <ChevronDown className="w-3.5 h-3.5 text-[#5E7166] absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+          </div>
+        </div>
+
+        {/* Schedule Grid: Columns by Professional (Screen 01 Mockup) */}
+        {viewMode === 'day' ? (
+          <div className="bg-white rounded-2xl border border-[#E8E2D8] shadow-xs overflow-hidden">
+            {/* Table Header: Professional columns */}
+            <div
+              className="grid border-b border-[#E8E2D8] bg-[#FAF8F2]/60"
+              style={{
+                gridTemplateColumns: `70px repeat(${Math.max(
+                  1,
+                  (selectedProfFilter === 'all'
+                    ? branchProfessionals
+                    : branchProfessionals.filter((p) => p.id === selectedProfFilter)
+                  ).length
+                )}, minmax(0, 1fr))`,
+              }}
+            >
+              <div className="p-3 text-[11px] font-bold text-[#5E7166] text-center border-r border-[#E8E2D8]" />
+              {(selectedProfFilter === 'all'
+                ? branchProfessionals
+                : branchProfessionals.filter((p) => p.id === selectedProfFilter)
+              ).map((prof) => (
                 <div
-                  className="p-4 border-b border-[#EFE9DF] dark:border-[#2D2825] flex items-center justify-between"
-                  style={{ borderTop: `4px solid ${prof.color_tag}` }}
+                  key={prof.id}
+                  className="p-3 flex items-center justify-center gap-2 border-r last:border-r-0 border-[#E8E2D8]"
                 >
-                  <div className="flex items-center gap-2.5">
-                    <div
-                      className="w-8 h-8 rounded-full flex items-center justify-center font-bold text-white text-xs shadow-xs"
-                      style={{ backgroundColor: prof.color_tag }}
-                    >
-                      {prof.display_name.charAt(0)}
-                    </div>
-                    <div>
-                      <h3 className="font-bold text-sm text-stone-900 dark:text-white leading-tight">
-                        {prof.display_name}
-                      </h3>
-                      <p className="text-[10px] text-stone-400 truncate max-w-[140px]">{prof.specialty}</p>
-                    </div>
+                  <div
+                    className="w-6 h-6 rounded-full flex items-center justify-center font-bold text-white text-[10px]"
+                    style={{ backgroundColor: prof.color_tag || '#28634C' }}
+                  >
+                    {prof.display_name.charAt(0)}
                   </div>
-                  <span className="text-xs font-semibold text-[#4A725D] dark:text-[#A1CEB5] bg-[#EBF2EE] dark:bg-[#25382D] px-2.5 py-0.5 rounded-lg border border-[#D5E3DB] dark:border-[#314A3B]">
-                    {profAppointments.length} turnos
+                  <span className="font-bold text-xs text-[#24352C]">
+                    {prof.display_name}
                   </span>
                 </div>
+              ))}
+            </div>
 
-                {/* Appointments List for this professional */}
-                <div className="p-3 space-y-3 flex-1 overflow-y-auto max-h-[600px] bg-[#FAF7F2]/60 dark:bg-[#1A1817]/60">
-                  {profAppointments.length === 0 ? (
-                    <div className="py-12 text-center text-xs text-stone-400">
-                      Sin turnos agendados para este día.
+            {/* Time Rows */}
+            <div className="divide-y divide-[#E8E2D8]/60">
+              {['09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00'].map((hourStr) => {
+                const hourNum = parseInt(hourStr.split(':')[0], 10);
+                const activeProfs =
+                  selectedProfFilter === 'all'
+                    ? branchProfessionals
+                    : branchProfessionals.filter((p) => p.id === selectedProfFilter);
+
+                return (
+                  <div
+                    key={hourStr}
+                    className="grid min-h-[76px]"
+                    style={{
+                      gridTemplateColumns: `70px repeat(${Math.max(
+                        1,
+                        activeProfs.length
+                      )}, minmax(0, 1fr))`,
+                    }}
+                  >
+                    {/* Hour Column */}
+                    <div className="p-2 text-xs font-medium text-[#5E7166] text-center border-r border-[#E8E2D8]/70 select-none pt-2.5">
+                      {hourStr}
                     </div>
-                  ) : (
-                    profAppointments
-                      .sort((a, b) => new Date(a.starts_at).getTime() - new Date(b.starts_at).getTime())
-                      .map((appt) => {
-                        const cust = customers.find((c) => c.id === appt.customer_id);
-                        const srv = services.find((s) => s.duration_minutes === appt.service_duration_minutes);
-                        const startTime = new Date(appt.starts_at).toLocaleTimeString('es-AR', {
-                          hour: '2-digit',
-                          minute: '2-digit',
-                        });
-                        const endTime = new Date(appt.ends_at).toLocaleTimeString('es-AR', {
-                          hour: '2-digit',
-                          minute: '2-digit',
-                        });
 
-                        return (
-                          <div
-                            key={appt.id}
-                            className={`p-4 rounded-2xl border bg-white shadow-xs transition hover:shadow-sm space-y-3 ${
-                              appt.status === 'in_progress'
-                                ? 'border-[#28634C] ring-2 ring-[#28634C]/20'
-                                : appt.status === 'cancelled'
-                                ? 'border-[#E8E2D8] opacity-60'
-                                : 'border-[#E8E2D8]'
-                            }`}
-                          >
-                            <div className="flex items-center justify-between">
-                              <div>
-                                <span className="font-bold text-xs text-[#24352C] flex items-center gap-1.5 tabular-nums">
-                                  <Clock className="w-3.5 h-3.5 text-[#28634C]" />
-                                  {startTime} - {endTime} hs
-                                </span>
-                                <span className="text-[10px] text-[#5E7166] mt-0.5 block">
-                                  Duración: {appt.service_duration_minutes || 30} min aprox
-                                </span>
-                              </div>
-                              {renderStatusBadge(appt.status)}
-                            </div>
+                    {/* Slots per professional */}
+                    {activeProfs.map((prof) => {
+                      const apptsInSlot = filteredAppointments.filter((a) => {
+                        if (a.professional_id !== prof.id) return false;
+                        const aHour = new Date(a.starts_at).getHours();
+                        return aHour === hourNum;
+                      });
 
-                            {/* Active In-Progress Timer Inside Card */}
-                            {appt.status === 'in_progress' && (() => {
-                              const timing = getTurnoTiming(appt);
-                              return (
-                                <div className="p-3 bg-[#FAF8F2] rounded-xl border border-[#28634C]/30 space-y-2">
-                                  <div className="flex items-center justify-between">
-                                    <span className="text-[11px] font-bold text-[#28634C] flex items-center gap-1">
-                                      <Timer className="w-3.5 h-3.5" />
-                                      {timing.isOverTime ? 'Excedido:' : 'Restante:'}
-                                    </span>
-                                    <span className="text-sm font-bold font-mono tabular-nums text-[#24352C]">
-                                      {timing.isOverTime ? `+${timing.formattedOvertime}` : timing.formattedRemaining}
-                                    </span>
-                                  </div>
-                                  <div className="w-full bg-[#E8E2D8] h-1.5 rounded-full overflow-hidden">
-                                    <div
-                                      className={`h-full transition-all duration-1000 ${
-                                        timing.isOverTime ? 'bg-amber-500' : 'bg-[#28634C]'
-                                      }`}
-                                      style={{ width: `${timing.pct}%` }}
-                                    />
-                                  </div>
-                                </div>
-                              );
-                            })()}
+                      return (
+                        <div
+                          key={prof.id}
+                          onClick={() => {
+                            if (apptsInSlot.length === 0) {
+                              setShowNewModal(true);
+                            }
+                          }}
+                          className="p-1.5 border-r last:border-r-0 border-[#E8E2D8]/60 hover:bg-[#FAFDFB]/60 transition relative cursor-pointer group flex flex-col gap-1.5"
+                        >
+                          {apptsInSlot.map((appt) => {
+                            const cust = customers.find((c) => c.id === appt.customer_id);
+                            const srv =
+                              services.find((s) => s.duration_minutes === appt.service_duration_minutes) ||
+                              appt.service;
+                            const startTime = new Date(appt.starts_at).toLocaleTimeString('es-AR', {
+                              hour: '2-digit',
+                              minute: '2-digit',
+                            });
+                            const endTime = new Date(appt.ends_at).toLocaleTimeString('es-AR', {
+                              hour: '2-digit',
+                              minute: '2-digit',
+                            });
 
-                            <div>
-                              <div className="font-semibold text-xs text-[#24352C] flex items-center justify-between">
-                                <span className="font-bold">{cust?.full_name || 'Cliente'}</span>
-                                <span className="text-xs font-bold text-[#28634C] tabular-nums">
-                                  ${appt.total_amount.toLocaleString()}
-                                </span>
-                              </div>
-                              <p className="text-[11px] text-[#5E7166] mt-0.5">
-                                {cust?.phone}
-                              </p>
-                              {appt.customer_notes && (
-                                <p className="text-[11px] text-[#24352C] bg-[#F7EFE4] p-2 rounded-xl mt-1.5 italic border border-[#E8CDA8]/60">
-                                  "{appt.customer_notes}"
-                                </p>
-                              )}
-                            </div>
+                            const isFinished = appt.status === 'completed';
+                            const isPending = appt.status === 'pending_payment';
 
-                            {/* Action progression bar */}
-                            <div className="pt-2 border-t border-[#E8E2D8] flex items-center justify-between gap-1.5">
-                              {/* Iniciar turno button */}
-                              {(appt.status === 'confirmed' || appt.status === 'checked_in') && (
-                                <button
-                                  onClick={() => handleStartTurno(appt)}
-                                  className="flex-1 py-2 px-3 rounded-xl bg-[#28634C] hover:bg-[#1E4D3B] text-white text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer shadow-xs active:scale-98"
-                                >
-                                  <Play className="w-3.5 h-3.5 fill-current text-[#E8CDA8]" />
-                                  <span>Iniciar turno</span>
-                                </button>
-                              )}
-
-                              {/* In-progress actions: Pop-up, +5min & Ya terminé */}
-                              {appt.status === 'in_progress' && (
-                                <>
-                                  <button
-                                    onClick={() => setActiveFocusAppt(appt)}
-                                    className="py-2 px-2.5 rounded-xl border border-[#28634C]/40 bg-[#28634C]/10 hover:bg-[#28634C]/20 text-[11px] font-bold text-[#28634C] transition cursor-pointer flex items-center gap-1 shadow-2xs"
-                                    title="Abrir pantalla completa para celular"
-                                  >
-                                    <span>📱 Pop-up</span>
-                                  </button>
-                                  <button
-                                    onClick={() => handleAddMinutes(appt.id, 5)}
-                                    className="py-2 px-2 rounded-xl border border-[#E8E2D8] bg-white hover:bg-[#FAF8F2] text-[11px] font-bold text-[#24352C] transition cursor-pointer"
-                                    title="Extender 5 minutos más"
-                                  >
-                                    +5m
-                                  </button>
-                                  <button
-                                    onClick={() => handleOpenFinishModal(appt)}
-                                    className="flex-1 py-2 px-3 rounded-xl bg-[#28634C] hover:bg-[#1E4D3B] text-white text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer shadow-xs active:scale-98"
-                                  >
-                                    <CheckCircle2 className="w-3.5 h-3.5 text-[#E8CDA8]" />
-                                    <span>Ya terminé</span>
-                                  </button>
-                                </>
-                              )}
-
-                              {appt.status === 'completed' && (
-                                <div className="flex-1 py-1.5 px-2 text-center text-xs font-semibold text-[#28634C] bg-[#FAF8F2] rounded-xl border border-[#E8E2D8] flex items-center justify-center gap-1.5 flex-wrap">
-                                  <span>✓ Atendido y cobrado</span>
-                                  {appt.actual_duration_minutes && (
-                                    <span className="px-1.5 py-0.5 rounded-md bg-[#28634C]/10 text-[#28634C] text-[10px] font-bold">
-                                      ⏱️ {appt.actual_duration_minutes} min reales
-                                    </span>
-                                  )}
-                                </div>
-                              )}
-
-                              {/* Reschedule Button */}
-                              {appt.status !== 'completed' && appt.status !== 'cancelled' && (
-                                <button
-                                  onClick={() => {
-                                    setActiveAppointment(appt);
-                                    setRescheduleDateStr(appt.starts_at.split('T')[0]);
-                                    setShowRescheduleModal(true);
-                                  }}
-                                  className="py-1.5 px-2 rounded-xl border border-[#E8E2D8] text-[#5E7166] hover:text-[#24352C] hover:bg-[#FAF8F2] text-[10px] font-medium transition cursor-pointer"
-                                >
-                                  Reprogramar
-                                </button>
-                              )}
-
-                              {/* Cancel action */}
-                              {appt.status !== 'cancelled' && appt.status !== 'completed' && (
-                                <button
-                                  onClick={() => {
-                                    if (confirm('¿Cancelar este turno?')) {
-                                      cancelAppointment(appt.id, 'Cancelado desde panel de agenda');
-                                    }
-                                  }}
-                                  className="p-1.5 rounded-xl text-stone-400 hover:text-red-600 hover:bg-red-50 transition cursor-pointer"
-                                  title="Cancelar turno"
-                                >
-                                  <XCircle className="w-3.5 h-3.5" />
-                                </button>
-                              )}
-                            </div>
-                          </div>
-                        );
-                      })
-                  )}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      ) : (
-        /* List View */
-        <div className="bg-white dark:bg-[#201D1B] rounded-2xl border border-[#E8E2D8] dark:border-[#2D2825] shadow-xs overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
-              <thead className="bg-[#FAF7F2] dark:bg-[#282421] text-stone-500 uppercase tracking-wider font-bold border-b border-[#E8E2D8] dark:border-[#2D2825]">
-                <tr>
-                  <th className="px-4 py-3">Fecha y Hora</th>
-                  <th className="px-4 py-3">Cliente</th>
-                  <th className="px-4 py-3">Profesional</th>
-                  <th className="px-4 py-3">Estado</th>
-                  <th className="px-4 py-3">Total</th>
-                  <th className="px-4 py-3 text-right">Acciones</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-[#F2ECE4] dark:divide-[#2D2825]">
-                {filteredAppointments.map((appt) => {
-                  const cust = customers.find((c) => c.id === appt.customer_id);
-                  const prof = professionals.find((p) => p.id === appt.professional_id);
-                  const d = new Date(appt.starts_at);
-
-                  return (
-                    <tr key={appt.id} className="hover:bg-[#FAF7F2]/80 dark:hover:bg-[#282421]/60 transition">
-                      <td className="px-4 py-3 font-semibold text-stone-800 dark:text-stone-100 tabular-nums">
-                        {d.toLocaleDateString('es-AR')} •{' '}
-                        {d.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })} hs
-                      </td>
-                      <td className="px-4 py-3">
-                        <div className="font-bold text-stone-900 dark:text-stone-100">{cust?.full_name}</div>
-                        <div className="text-[11px] text-stone-400">{cust?.phone}</div>
-                      </td>
-                      <td className="px-4 py-3 font-medium text-stone-700 dark:text-stone-300">
-                        {prof?.display_name}
-                      </td>
-                      <td className="px-4 py-3">
-                        {renderStatusBadge(appt.status)}
-                        {appt.actual_duration_minutes && (
-                          <span className="text-[10px] text-[#28634C] font-semibold block mt-1">
-                            ⏱️ {appt.actual_duration_minutes} min reales
-                          </span>
-                        )}
-                      </td>
-                      <td className="px-4 py-3 font-bold text-stone-900 dark:text-stone-100 tabular-nums">
-                        ${appt.total_amount.toLocaleString()}
-                      </td>
-                      <td className="px-4 py-3 text-right">
-                        <div className="flex items-center justify-end gap-1.5">
-                          {(appt.status === 'confirmed' || appt.status === 'checked_in') && (
-                            <button
-                              onClick={() => handleStartTurno(appt)}
-                              className="px-2.5 py-1 text-[11px] font-bold rounded-lg bg-[#28634C] hover:bg-[#1E4D3B] text-white transition flex items-center gap-1 shadow-2xs cursor-pointer"
-                            >
-                              <Play className="w-3 h-3 fill-current text-[#E8CDA8]" />
-                              <span>Iniciar</span>
-                            </button>
-                          )}
-                          {appt.status === 'in_progress' && (
-                            <div className="flex items-center gap-1">
-                              <button
-                                onClick={() => setActiveFocusAppt(appt)}
-                                className="px-2 py-1 text-[11px] font-bold rounded-lg bg-white border border-[#28634C]/40 text-[#28634C] transition flex items-center gap-1 cursor-pointer"
-                                title="Abrir pop-up completo para celular"
+                            return (
+                              <div
+                                key={appt.id}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setActiveAppointment(appt);
+                                }}
+                                className={`p-2.5 rounded-xl border bg-white shadow-2xs hover:shadow-xs transition flex flex-col justify-between ${
+                                  isFinished
+                                    ? 'border-l-4 border-l-stone-400 border-stone-200 bg-stone-50/40'
+                                    : isPending
+                                    ? 'border-l-4 border-l-amber-500 border-amber-200 bg-[#FFFDF5]'
+                                    : 'border-l-4 border-l-[#28634C] border-[#CCD6D0]'
+                                }`}
                               >
-                                <span>📱 Pop-up</span>
-                              </button>
-                              <button
-                                onClick={() => handleOpenFinishModal(appt)}
-                                className="px-2.5 py-1 text-[11px] font-bold rounded-lg bg-[#E8CDA8] hover:bg-[#dfc097] text-[#24352C] transition flex items-center gap-1 shadow-2xs cursor-pointer"
-                              >
-                                <CheckCircle2 className="w-3 h-3 text-[#28634C]" />
-                                <span>Ya terminé</span>
-                              </button>
-                            </div>
-                          )}
-                          <button
-                            onClick={() => {
-                              setActiveAppointment(appt);
-                              setRescheduleDateStr(appt.starts_at.split('T')[0]);
-                              setShowRescheduleModal(true);
-                            }}
-                            className="px-2.5 py-1 text-[11px] font-semibold rounded-lg border border-[#E4DDD2] hover:bg-[#F7F3EC] text-stone-700 transition cursor-pointer"
-                          >
-                            Reprogramar
-                          </button>
+                                <div className="flex items-start justify-between gap-1">
+                                  <div className="min-w-0">
+                                    <h4 className="font-bold text-xs text-[#24352C] truncate">
+                                      {cust?.full_name || 'Cliente'}
+                                    </h4>
+                                    <p className="text-[11px] text-[#5E7166] truncate">
+                                      {srv?.name || 'Servicio'} · {appt.service_duration_minutes || 45} min
+                                    </p>
+                                  </div>
+                                  <span
+                                    className={`px-2 py-0.5 rounded-full text-[10px] font-bold shrink-0 ${
+                                      isFinished
+                                        ? 'bg-stone-100 text-stone-600'
+                                        : isPending
+                                        ? 'bg-amber-100 text-amber-800'
+                                        : 'bg-[#EAF2EC] text-[#28634C]'
+                                    }`}
+                                  >
+                                    {isFinished
+                                      ? 'Finalizado'
+                                      : isPending
+                                      ? 'Pendiente'
+                                      : 'Confirmado'}
+                                  </span>
+                                </div>
+                                <div className="text-[10px] text-[#5E7166] text-right mt-1 font-mono">
+                                  {startTime} - {endTime}
+                                </div>
+                              </div>
+                            );
+                          })}
                         </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+                      );
+                    })}
+                  </div>
+                );
+              })}
+            </div>
           </div>
-        </div>
-      )}
+        ) : (
+          /* List Mode View */
+          <div className="bg-white rounded-2xl border border-[#E8E2D8] shadow-xs overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs">
+                <thead className="bg-[#FAF8F2] text-[#5E7166] font-bold border-b border-[#E8E2D8]">
+                  <tr>
+                    <th className="px-4 py-3">Fecha y Hora</th>
+                    <th className="px-4 py-3">Cliente</th>
+                    <th className="px-4 py-3">Profesional</th>
+                    <th className="px-4 py-3">Estado</th>
+                    <th className="px-4 py-3">Total</th>
+                    <th className="px-4 py-3 text-right">Acciones</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[#E8E2D8]">
+                  {filteredAppointments.map((appt) => {
+                    const cust = customers.find((c) => c.id === appt.customer_id);
+                    const prof = professionals.find((p) => p.id === appt.professional_id);
+                    const d = new Date(appt.starts_at);
+
+                    return (
+                      <tr
+                        key={appt.id}
+                        onClick={() => setActiveAppointment(appt)}
+                        className="hover:bg-[#FAF8F2]/60 transition cursor-pointer"
+                      >
+                        <td className="px-4 py-3 font-mono font-medium">
+                          {d.toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit' })}{' '}
+                          {d.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })} hs
+                        </td>
+                        <td className="px-4 py-3 font-bold text-[#24352C]">
+                          {cust?.full_name || 'Cliente'}
+                        </td>
+                        <td className="px-4 py-3">{prof?.display_name || 'Profesional'}</td>
+                        <td className="px-4 py-3">{renderMobileStatusBadge(appt.status)}</td>
+                        <td className="px-4 py-3 font-bold text-[#28634C]">
+                          ${appt.total_amount.toLocaleString()}
+                        </td>
+                        <td className="px-4 py-3 text-right">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setActiveAppointment(appt);
+                            }}
+                            className="px-2.5 py-1 text-xs font-semibold rounded-lg bg-[#FAF8F2] hover:bg-[#F2ECE4] border border-[#E8E2D8] text-[#28634C]"
+                          >
+                            Ver Detalle
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* MODAL: MANUAL NEW APPOINTMENT */}

@@ -241,115 +241,227 @@ export const ClientsPage: React.FC = () => {
         )}
       </div>
 
-      {/* DESKTOP-ONLY VIEW */}
-      <div className="hidden md:block space-y-6">
+      {/* DESKTOP-ONLY VIEW: SCREEN 02 (Clientes - Versión escritorio) */}
+      <div className="hidden md:block space-y-4">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-[#E8E2D8] shadow-xs">
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="p-2 bg-[#FAF8F2] rounded-xl border border-[#E8E2D8] text-[#28634C]">
-                <Users className="w-5 h-5" />
-              </span>
-              <h1 className="text-xl sm:text-2xl font-bold text-[#24352C] tracking-tight">Mis Clientes</h1>
-            </div>
-            <p className="text-xs text-[#5E7166] mt-1.5">
-              Directorio de clientes de {currentOrg.name}. Contactalos por WhatsApp con un toque y revisá sus visitas.
-            </p>
-          </div>
+        <div className="flex items-center justify-between">
+          <h1 className="text-2xl font-extrabold text-[#24352C] tracking-tight">
+            Clientes
+          </h1>
 
           <button
+            type="button"
             onClick={() => setShowNewModal(true)}
-            className="flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-[#28634C] hover:bg-[#1E4E3B] text-white font-bold text-xs shadow-xs transition cursor-pointer min-h-[44px]"
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-[#CCD6D0] bg-white hover:bg-[#FAF8F2] text-xs font-bold text-[#24352C] transition shadow-2xs cursor-pointer"
           >
-            <Plus className="w-4 h-4 text-[#E8CDA8]" />
-            <span>Agregar Cliente</span>
+            <Plus className="w-4 h-4 text-[#28634C]" />
+            <span>Agregar cliente</span>
           </button>
         </div>
 
-        {/* Search Bar Desktop */}
-        <div className="bg-white rounded-2xl border border-[#E8E2D8] shadow-xs p-3">
-          <div className="relative">
-            <Search className="w-4 h-4 text-[#5E7166] absolute left-3.5 top-1/2 -translate-y-1/2" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Buscar por nombre, teléfono o email..."
-              className="w-full pl-10 pr-4 py-2.5 bg-[#FAF8F2] border border-[#E8E2D8] rounded-xl text-xs sm:text-sm text-[#24352C] focus:outline-[#28634C]"
-            />
-          </div>
+        {/* Search Bar */}
+        <div className="relative">
+          <Search className="w-4 h-4 text-[#5E7166] absolute left-3.5 top-1/2 -translate-y-1/2" />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Buscar nombre o teléfono"
+            className="w-full pl-10 pr-4 py-2.5 bg-white border border-[#E8E2D8] rounded-xl text-xs text-[#24352C] placeholder-[#5E7166]/70 focus:outline-[#28634C] shadow-2xs"
+          />
         </div>
 
-        {/* Customer Desktop Table */}
-        <div className="bg-white rounded-2xl border border-[#E8E2D8] shadow-xs overflow-hidden">
-          {filteredCustomers.length === 0 ? (
-            <div className="py-12 text-center text-[#5E7166] space-y-2">
-              <Users className="w-8 h-8 text-[#5E7166]/40 mx-auto" />
-              <p className="font-medium text-sm">No encontramos clientes con esa búsqueda.</p>
-              <p className="text-xs text-[#5E7166]/80">Podés agregar uno nuevo con el botón verde superior.</p>
-            </div>
-          ) : (
+        {/* 2-Column Split: Table on Left (60%), Selected Detail on Right (40%) */}
+        <div className="grid grid-cols-12 gap-5 items-start">
+          {/* Left Table (7 cols) */}
+          <div className="col-span-12 lg:col-span-7 bg-white rounded-2xl border border-[#E8E2D8] shadow-xs overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">
-                <thead className="bg-[#FAF8F2] text-[#5E7166] font-semibold border-b border-[#E8E2D8]">
+                <thead className="bg-[#FAF8F2]/60 text-[#5E7166] font-semibold border-b border-[#E8E2D8]">
                   <tr>
-                    <th className="px-5 py-3">Cliente</th>
-                    <th className="px-4 py-3">Teléfono</th>
-                    <th className="px-4 py-3">WhatsApp</th>
-                    <th className="px-4 py-3">Turnos realizados</th>
-                    <th className="px-4 py-3">Total consumido</th>
-                    <th className="px-5 py-3 text-right">Ficha</th>
+                    <th className="px-4 py-3">Cliente</th>
+                    <th className="px-3 py-3">Teléfono</th>
+                    <th className="px-3 py-3 text-center">Visitas</th>
+                    <th className="px-4 py-3 text-right">Total consumido</th>
+                    <th className="px-3 py-3 w-8" />
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-[#E8E2D8]">
-                  {filteredCustomers.map((cust) => (
-                    <tr
-                      key={cust.id}
-                      className="hover:bg-[#FAF8F2]/60 transition cursor-pointer"
-                      onClick={() => setSelectedCustomer(cust)}
-                    >
-                      <td className="px-5 py-3.5">
-                        <div className="font-bold text-sm text-[#24352C]">{cust.full_name}</div>
-                        {cust.email && <div className="text-[11px] text-[#5E7166]">{cust.email}</div>}
-                      </td>
-                      <td className="px-4 py-3.5 text-[#24352C] font-mono font-medium">
-                        {cust.phone}
-                      </td>
-                      <td className="px-4 py-3.5">
-                        <a
-                          href={getWhatsAppLink(cust.phone)}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          onClick={(e) => e.stopPropagation()}
-                          className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 font-semibold text-[11px] transition"
-                        >
-                          <MessageCircle className="w-3.5 h-3.5" />
-                          <span>Chat WhatsApp</span>
-                        </a>
-                      </td>
-                      <td className="px-4 py-3.5 font-semibold text-[#24352C] tabular-nums">
-                        {cust.total_appointments} {cust.total_appointments === 1 ? 'turno' : 'turnos'}
-                      </td>
-                      <td className="px-4 py-3.5 font-bold text-[#28634C] tabular-nums text-sm">
-                        ${cust.total_spent.toLocaleString()}
-                      </td>
-                      <td className="px-5 py-3.5 text-right">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setSelectedCustomer(cust);
-                          }}
-                          className="px-3 py-1.5 rounded-lg bg-[#FAF8F2] hover:bg-[#F2ECE4] border border-[#E8E2D8] text-[#28634C] font-bold text-xs transition cursor-pointer"
-                        >
-                          Ver Historial
-                        </button>
+                <tbody className="divide-y divide-[#E8E2D8]/60">
+                  {filteredCustomers.length === 0 ? (
+                    <tr>
+                      <td colSpan={5} className="py-12 text-center text-xs text-[#5E7166]">
+                        No se encontraron clientes con esa búsqueda.
                       </td>
                     </tr>
-                  ))}
+                  ) : (
+                    filteredCustomers.map((cust) => {
+                      const isSelected =
+                        (selectedCustomer?.id || filteredCustomers[0]?.id) === cust.id;
+
+                      return (
+                        <tr
+                          key={cust.id}
+                          onClick={() => setSelectedCustomer(cust)}
+                          className={`transition cursor-pointer ${
+                            isSelected
+                              ? 'bg-[#EAF2EC]/50 font-bold'
+                              : 'hover:bg-[#FAF8F2]/60'
+                          }`}
+                        >
+                          <td className="px-4 py-3">
+                            <div className="flex items-center gap-2.5">
+                              <div className="w-7 h-7 rounded-full bg-[#E5E0D8] text-[#24352C] font-bold text-[10px] flex items-center justify-center shrink-0">
+                                {getInitials(cust.full_name)}
+                              </div>
+                              <span className="font-bold text-xs text-[#24352C] truncate">
+                                {cust.full_name}
+                              </span>
+                            </div>
+                          </td>
+                          <td className="px-3 py-3 font-mono text-[#5E7166] text-xs">
+                            {cust.phone}
+                          </td>
+                          <td className="px-3 py-3 text-center text-[#24352C] font-semibold">
+                            {cust.total_appointments}
+                          </td>
+                          <td className="px-4 py-3 text-right font-bold text-[#24352C] tabular-nums">
+                            ${cust.total_spent.toLocaleString()}
+                          </td>
+                          <td className="px-3 py-3 text-[#5E7166]">
+                            <ChevronRight className="w-4 h-4" />
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
                 </tbody>
               </table>
             </div>
-          )}
+          </div>
+
+          {/* Right Featured Customer Card (5 cols) */}
+          <div className="col-span-12 lg:col-span-5">
+            {(() => {
+              const activeCust = selectedCustomer || filteredCustomers[0] || null;
+              if (!activeCust) return null;
+
+              const custAppointments = appointments
+                .filter((a) => a.customer_id === activeCust.id && a.status !== 'cancelled')
+                .sort((a, b) => new Date(b.starts_at).getTime() - new Date(a.starts_at).getTime());
+
+              return (
+                <div className="bg-white rounded-2xl border border-[#E8E2D8] p-5 shadow-xs space-y-4 sticky top-20">
+                  {/* Top Customer Info & Actions */}
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="w-12 h-12 rounded-full bg-[#E5E0D8] text-[#24352C] font-bold text-sm flex items-center justify-center shrink-0">
+                        {getInitials(activeCust.full_name)}
+                      </div>
+                      <div className="min-w-0">
+                        <h3 className="font-bold text-base text-[#24352C] truncate">
+                          {activeCust.full_name}
+                        </h3>
+                        <p className="text-xs text-[#5E7166] font-mono mt-0.5">
+                          {activeCust.phone}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      <a
+                        href={getWhatsAppLink(activeCust.phone)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-1 px-3 py-1.5 rounded-xl border border-[#CCD6D0] hover:bg-emerald-50 text-xs font-semibold text-[#24352C] transition"
+                      >
+                        <MessageCircle className="w-3.5 h-3.5 text-emerald-600" />
+                        <span>WhatsApp</span>
+                      </a>
+                      <button
+                        type="button"
+                        onClick={() => setSelectedCustomer(activeCust)}
+                        className="flex items-center gap-1 px-3 py-1.5 rounded-xl border border-[#CCD6D0] hover:bg-[#FAF8F2] text-xs font-semibold text-[#24352C] transition cursor-pointer"
+                      >
+                        <Edit className="w-3.5 h-3.5 text-[#5E7166]" />
+                        <span>Editar</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* 2 Stat Boxes */}
+                  <div className="grid grid-cols-2 gap-3 pt-1">
+                    <div className="bg-[#FAF8F2] border border-[#E8E2D8] p-3 rounded-xl text-center">
+                      <span className="block text-2xl font-extrabold text-[#24352C] tabular-nums">
+                        {activeCust.total_appointments}
+                      </span>
+                      <span className="text-[11px] text-[#5E7166] font-medium">visitas</span>
+                    </div>
+
+                    <div className="bg-[#FAF8F2] border border-[#E8E2D8] p-3 rounded-xl text-center">
+                      <span className="block text-2xl font-extrabold text-[#24352C] tabular-nums">
+                        ${activeCust.total_spent.toLocaleString()}
+                      </span>
+                      <span className="text-[11px] text-[#5E7166] font-medium">total consumido</span>
+                    </div>
+                  </div>
+
+                  {/* Histórico de visitas */}
+                  <div className="space-y-2 pt-1">
+                    <h4 className="font-bold text-xs text-[#24352C]">
+                      Histórico de visitas
+                    </h4>
+
+                    <div className="divide-y divide-[#E8E2D8]/60 max-h-48 overflow-y-auto">
+                      {custAppointments.length === 0 ? (
+                        <p className="py-4 text-center text-[11px] text-[#5E7166]">
+                          Aún no registra visitas finalizadas.
+                        </p>
+                      ) : (
+                        custAppointments.slice(0, 6).map((appt) => {
+                          const srv =
+                            services.find(
+                              (s) => s.duration_minutes === appt.service_duration_minutes
+                            ) || appt.service;
+                          const dateStr = new Date(appt.starts_at).toLocaleDateString('es-AR', {
+                            day: '2-digit',
+                            month: 'short',
+                            year: 'numeric',
+                          });
+
+                          return (
+                            <div
+                              key={appt.id}
+                              className="flex items-center justify-between py-2.5 text-xs text-[#24352C]"
+                            >
+                              <span className="text-[11px] text-[#5E7166] shrink-0 font-medium">
+                                {dateStr}
+                              </span>
+                              <span className="truncate font-medium px-2 text-center text-xs">
+                                {srv?.name || 'Corte de cabello'}
+                              </span>
+                              <div className="flex items-center gap-1 shrink-0 font-bold tabular-nums">
+                                <span>${appt.total_amount.toLocaleString()}</span>
+                                <ChevronRight className="w-3.5 h-3.5 text-[#5E7166]" />
+                              </div>
+                            </div>
+                          );
+                        })
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Agendar turno button */}
+                  <a
+                    href="/admin/calendar"
+                    className="w-full py-3 rounded-2xl bg-[#28634C] hover:bg-[#1E4E3B] text-white font-bold text-xs shadow-xs transition flex items-center justify-center gap-2 cursor-pointer"
+                  >
+                    <Calendar className="w-4 h-4 text-[#E8CDA8]" />
+                    <span>Agendar turno</span>
+                  </a>
+                </div>
+              );
+            })()}
+          </div>
         </div>
       </div>
 

@@ -687,507 +687,508 @@ export const SalesCashPage: React.FC = () => {
       </div>
 
       {/* =========================================================================
-          DESKTOP VIEW (hidden md:block)
+          DESKTOP-ONLY VIEW: SCREEN 03 (Caja y cobros - Versión escritorio)
       ========================================================================= */}
-      <div className="hidden md:block space-y-6">
-        {/* Header & Tabs */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-[#E8E2D8] shadow-xs">
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="p-2 bg-[#FAF8F2] rounded-xl border border-[#E8E2D8] text-[#28634C]">
-                <ReceiptText className="w-5 h-5" />
-              </span>
-              <h1 className="text-xl sm:text-2xl font-bold text-[#24352C] tracking-tight">
-                Caja y Cobros
-              </h1>
-            </div>
-            <p className="text-xs text-[#5E7166] mt-1.5">
-              Cobrá turnos y productos en mostrador, revisá el historial y controlá la caja diaria de {currentBranch.name}.
-            </p>
-          </div>
+      <div className="hidden md:block space-y-4">
+        {/* Header Title */}
+        <h1 className="text-2xl font-extrabold text-[#24352C] tracking-tight">
+          Caja y cobros
+        </h1>
 
-          {/* Tab Buttons */}
-          <div className="flex bg-[#FAF8F2] p-1 rounded-xl text-xs font-semibold border border-[#E8E2D8]">
-            <button
-              onClick={() => setActiveTab('pos')}
-              className={`px-3 py-2 rounded-lg transition cursor-pointer min-h-[40px] ${
-                activeTab === 'pos'
-                  ? 'bg-[#28634C] text-white shadow-xs font-bold'
-                  : 'text-[#5E7166] hover:text-[#24352C]'
-              }`}
-            >
-              Cobrar en Mostrador
-            </button>
+        {/* Tab Buttons (Cobrar | Historial | Caja del día) */}
+        <div className="flex items-center gap-6 border-b border-[#E8E2D8] pb-1 text-xs">
           <button
+            type="button"
+            onClick={() => setActiveTab('pos')}
+            className={`pb-2.5 font-bold transition cursor-pointer relative ${
+              activeTab === 'pos'
+                ? 'text-[#28634C] border-b-2 border-[#28634C]'
+                : 'text-[#5E7166] hover:text-[#24352C]'
+            }`}
+          >
+            Cobrar
+          </button>
+          <button
+            type="button"
             onClick={() => setActiveTab('sales')}
-            className={`px-3 py-2 rounded-lg transition cursor-pointer min-h-[40px] ${
+            className={`pb-2.5 font-bold transition cursor-pointer relative ${
               activeTab === 'sales'
-                ? 'bg-[#28634C] text-white shadow-xs font-bold'
+                ? 'text-[#28634C] border-b-2 border-[#28634C]'
                 : 'text-[#5E7166] hover:text-[#24352C]'
             }`}
           >
-            Historial de Cobros
+            Historial
           </button>
           <button
+            type="button"
             onClick={() => setActiveTab('cash')}
-            className={`px-3 py-2 rounded-lg transition cursor-pointer min-h-[40px] flex items-center gap-1.5 ${
+            className={`pb-2.5 font-bold transition cursor-pointer flex items-center gap-1.5 relative ${
               activeTab === 'cash'
-                ? 'bg-[#28634C] text-white shadow-xs font-bold'
+                ? 'text-[#28634C] border-b-2 border-[#28634C]'
                 : 'text-[#5E7166] hover:text-[#24352C]'
             }`}
           >
-            <span>Caja del Día</span>
+            <span>Caja del día</span>
             {activeSession ? (
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
             ) : (
-              <span className="w-2 h-2 rounded-full bg-amber-500" />
+              <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
             )}
           </button>
         </div>
-      </div>
 
-      {/* POS / COBRAR EN MOSTRADOR TAB */}
-      {activeTab === 'pos' && (
-        <div className="grid gap-6 lg:grid-cols-12">
-          {/* Catalog Selector (Left 7 cols) */}
-          <div className="lg:col-span-7 space-y-4">
-            {/* Link existing appointment */}
-            <div className="bg-white p-5 rounded-2xl border border-[#E8E2D8] shadow-xs space-y-2">
-              <label className="block text-xs font-bold text-[#24352C]">
-                Cobrar un Turno de Hoy (Opcional):
-              </label>
-              <select
-                value={selectedAppointmentId}
-                onChange={(e) => handleSelectAppointment(e.target.value)}
-                className="w-full bg-[#FAF8F2] border border-[#E8E2D8] rounded-xl px-3.5 py-2.5 text-xs sm:text-sm text-[#24352C] focus:outline-[#28634C]"
-              >
-                <option value="">Seleccionar un turno para cargar al ticket...</option>
-                {appointments
-                  .filter(
-                    (a) =>
-                      a.branch_id === currentBranch.id &&
-                      ['confirmed', 'checked_in', 'in_progress'].includes(a.status)
-                  )
-                  .map((a) => {
-                    const cust = customers.find((c) => c.id === a.customer_id);
-                    return (
-                      <option key={a.id} value={a.id}>
-                        {new Date(a.starts_at).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })} hs - {cust?.full_name || 'Cliente'} (${a.total_amount.toLocaleString()})
-                      </option>
-                    );
-                  })}
-              </select>
-            </div>
-
-            {/* Quick Add Services & Products */}
-            <div className="bg-white p-5 rounded-2xl border border-[#E8E2D8] shadow-xs space-y-4">
-              <div>
-                <h3 className="font-bold text-sm text-[#24352C]">Agregar Ítems al Ticket</h3>
-                <p className="text-xs text-[#5E7166]">Tocá cualquier servicio o producto para sumarlo.</p>
-              </div>
-
-              {/* Services List */}
-              <div className="space-y-2">
-                <span className="text-[11px] font-bold uppercase tracking-wider text-[#28634C]">
-                  Servicios Disponibles
-                </span>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                  {services
-                    .filter((s) => s.organization_id === currentOrg.id && s.is_active)
-                    .map((s) => (
-                      <button
-                        key={s.id}
-                        type="button"
-                        onClick={() => handleAddService(s.id)}
-                        className="p-3 rounded-xl border border-[#E8E2D8] hover:border-[#28634C] bg-[#FAF8F2] hover:bg-[#F2ECE4] text-left transition flex flex-col justify-between cursor-pointer min-h-[64px]"
-                      >
-                        <span className="font-semibold text-xs text-[#24352C] line-clamp-1">
-                          {s.name}
-                        </span>
-                        <span className="text-xs font-bold text-[#28634C] mt-2 tabular-nums">
-                          ${s.price.toLocaleString()}
-                        </span>
-                      </button>
-                    ))}
-                </div>
-              </div>
-
-              {/* Products List */}
-              <div className="space-y-2 pt-3 border-t border-[#E8E2D8]">
-                <span className="text-[11px] font-bold uppercase tracking-wider text-[#5E7166]">
-                  Productos en Mostrador
-                </span>
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                  {products
-                    .filter((p) => p.organization_id === currentOrg.id && p.is_active)
-                    .map((p) => (
-                      <button
-                        key={p.id}
-                        type="button"
-                        onClick={() => handleAddProduct(p.id)}
-                        className="p-3 rounded-xl border border-[#E8E2D8] hover:border-[#28634C] bg-[#FAF8F2] hover:bg-[#F2ECE4] text-left transition flex flex-col justify-between cursor-pointer min-h-[64px]"
-                      >
-                        <div>
-                          <span className="font-semibold text-xs text-[#24352C] line-clamp-1">
-                            {p.name}
-                          </span>
-                          <span className="text-[10px] text-[#5E7166]">Stock: {p.current_stock} un.</span>
-                        </div>
-                        <span className="text-xs font-bold text-[#28634C] mt-2 tabular-nums">
-                          ${p.sale_price.toLocaleString()}
-                        </span>
-                      </button>
-                    ))}
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Ticket / Checkout Panel (Right 5 cols) */}
-          <div className="lg:col-span-5 space-y-4">
-            <div className="bg-white p-5 rounded-2xl border border-[#E8E2D8] shadow-xs space-y-4">
-              <div className="flex items-center justify-between pb-3 border-b border-[#E8E2D8]">
-                <div className="flex items-center gap-2">
-                  <ShoppingBag className="w-5 h-5 text-[#28634C]" />
-                  <h3 className="font-bold text-base text-[#24352C]">Ticket de Cobro</h3>
-                </div>
-                <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-[#FAF8F2] border border-[#E8E2D8] text-[#5E7166]">
-                  {cartItems.length} {cartItems.length === 1 ? 'ítem' : 'ítems'}
-                </span>
-              </div>
-
-              {/* Items List */}
-              <div className="space-y-2 max-h-56 overflow-y-auto">
-                {cartItems.length === 0 ? (
-                  <div className="py-8 text-center text-xs text-[#5E7166] space-y-1">
-                    <ReceiptText className="w-6 h-6 mx-auto text-[#5E7166]/40" />
-                    <p className="font-medium">El ticket está vacío.</p>
-                    <p className="text-[11px] text-[#5E7166]/80">Elegí un servicio o producto para empezar.</p>
-                  </div>
-                ) : (
-                  cartItems.map((item, idx) => (
-                    <div
-                      key={idx}
-                      className="flex items-center justify-between p-2.5 rounded-xl bg-[#FAF8F2] text-xs border border-[#E8E2D8]"
-                    >
-                      <div className="flex-1 mr-2 min-w-0">
-                        <div className="font-bold text-[#24352C] truncate">{item.description}</div>
-                        <div className="text-[11px] text-[#5E7166]">
-                          {item.quantity} x ${item.unitPrice.toLocaleString()}
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2 shrink-0">
-                        <span className="font-bold text-[#28634C] tabular-nums">
-                          ${(item.quantity * item.unitPrice).toLocaleString()}
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => handleRemoveCartItem(idx)}
-                          className="text-[#5E7166] hover:text-red-600 p-1 transition cursor-pointer"
-                          title="Eliminar ítem"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
-
-              {/* Customer Selector */}
-              <div>
-                <label className="block text-xs font-bold text-[#24352C] mb-1">
-                  Cliente (opcional)
-                </label>
-                <CustomerSearchSelect
-                  customers={customers.filter((c) => c.organization_id === currentOrg.id)}
-                  selectedCustomerId={selectedCustomerId}
-                  onSelectCustomerId={(id) => setSelectedCustomerId(id)}
-                  placeholder="Buscar cliente para asociar al cobro..."
-                />
-              </div>
-
-              {/* Summary Calculations */}
-              <div className="pt-3 border-t border-[#E8E2D8] space-y-1.5 text-xs">
-                <div className="flex justify-between text-[#5E7166]">
-                  <span>Subtotal</span>
-                  <span className="tabular-nums font-medium">${subtotal.toLocaleString()}</span>
-                </div>
-                {depositCredit > 0 && (
-                  <div className="flex justify-between text-[#28634C] font-semibold bg-[#F7EFE4] px-2.5 py-1 rounded-lg border border-[#E8CDA8]/60">
-                    <span>Seña online descontada</span>
-                    <span className="tabular-nums">-${depositCredit.toLocaleString()}</span>
-                  </div>
-                )}
-                <div className="flex justify-between text-base font-extrabold text-[#24352C] pt-2 border-t border-[#E8E2D8]">
-                  <span>Total a Cobrar</span>
-                  <span className="tabular-nums text-[#28634C] text-lg">${finalTotal.toLocaleString()}</span>
-                </div>
-              </div>
-
-              {/* Payment Method */}
-              <div className="space-y-1.5 pt-1">
-                <span className="text-xs font-bold text-[#24352C]">Medio de Pago</span>
-                <div className="grid grid-cols-2 gap-2">
-                  {paymentOptions.map((m) => (
-                    <button
-                      key={m.id}
-                      type="button"
-                      onClick={() => setPaymentMethod(m.id)}
-                      className={`p-2.5 rounded-xl border text-xs font-semibold transition flex items-center gap-2 cursor-pointer min-h-[44px] ${
-                        paymentMethod === m.id
-                          ? 'border-[#28634C] bg-[#F7EFE4] text-[#28634C] font-bold shadow-2xs'
-                          : 'border-[#E8E2D8] bg-[#FAF8F2] text-[#5E7166] hover:bg-[#F2ECE4]'
-                      }`}
-                    >
-                      <span className={paymentMethod === m.id ? 'text-[#28634C]' : 'text-[#5E7166]'}>
-                        {m.icon}
-                      </span>
-                      <span className="truncate">{m.label}</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <button
-                disabled={cartItems.length === 0}
-                onClick={handleCheckout}
-                className="w-full py-3.5 rounded-xl bg-[#28634C] hover:bg-[#1E4E3B] disabled:opacity-40 disabled:cursor-not-allowed text-white font-bold text-sm transition flex items-center justify-center gap-2 shadow-xs cursor-pointer min-h-[48px]"
-              >
-                <CheckCircle className="w-5 h-5 text-[#E8CDA8]" />
-                <span>Confirmar Cobro de ${finalTotal.toLocaleString()}</span>
-              </button>
-            </div>
-
-            {/* Success Sale Modal / Receipt */}
-            {posSuccessSale && (
-              <div className="bg-emerald-50 p-4 rounded-2xl border border-emerald-200 space-y-2 text-xs animate-in fade-in duration-200">
-                <div className="flex items-center justify-between text-emerald-800 font-bold">
-                  <span className="flex items-center gap-1.5">
-                    <CheckCircle className="w-4 h-4 text-emerald-600" />
-                    ¡Cobro registrado correctamente!
-                  </span>
-                  <button
-                    onClick={() => setPosSuccessSale(null)}
-                    className="underline text-[11px] font-bold text-emerald-800 cursor-pointer"
+        {/* TAB POS (SCREEN 03 MOCKUP) */}
+        {activeTab === 'pos' && (
+          <div className="grid grid-cols-12 gap-5 items-start pt-1">
+            {/* Catalog & Item Selection (7 cols) */}
+            <div className="col-span-12 lg:col-span-7 space-y-4">
+              {/* Row 1: Vincular Turno & Buscar Ítem */}
+              <div className="grid grid-cols-2 gap-3">
+                <div className="relative">
+                  <select
+                    value={selectedAppointmentId}
+                    onChange={(e) => handleSelectAppointment(e.target.value)}
+                    className="w-full bg-white border border-[#CCD6D0] rounded-xl px-3.5 py-2.5 text-xs text-[#24352C] font-semibold appearance-none focus:outline-[#28634C] shadow-2xs cursor-pointer truncate pr-8"
                   >
-                    Listo
-                  </button>
-                </div>
-                <div className="font-mono text-[11px] text-emerald-700">
-                  Comprobante: {posSuccessSale.receipt_number} • Total: ${posSuccessSale.total_amount.toLocaleString()}
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* SALES HISTORY TAB */}
-      {activeTab === 'sales' && (
-        <div className="bg-white rounded-2xl border border-[#E8E2D8] shadow-xs overflow-hidden">
-          <div className="p-4 border-b border-[#E8E2D8] flex items-center justify-between">
-            <h3 className="font-bold text-sm text-[#24352C]">Historial de Cobros Recientes</h3>
-            <span className="text-xs text-[#5E7166]">
-              {sales.filter((s) => s.organization_id === currentOrg.id).length} operaciones
-            </span>
-          </div>
-
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
-              <thead className="bg-[#FAF8F2] text-[#5E7166] uppercase tracking-wider font-bold border-b border-[#E8E2D8]">
-                <tr>
-                  <th className="px-4 py-3">Comprobante</th>
-                  <th className="px-4 py-3">Fecha y Hora</th>
-                  <th className="px-4 py-3">Cliente</th>
-                  <th className="px-4 py-3">Medio de Pago</th>
-                  <th className="px-4 py-3">Total</th>
-                  <th className="px-4 py-3 text-right">Estado</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-[#E8E2D8]">
-                {sales.filter((s) => s.organization_id === currentOrg.id).length === 0 ? (
-                  <tr>
-                    <td colSpan={6} className="py-8 text-center text-[#5E7166]">
-                      No hay cobros registrados todavía.
-                    </td>
-                  </tr>
-                ) : (
-                  sales
-                    .filter((s) => s.organization_id === currentOrg.id)
-                    .map((s) => (
-                      <tr key={s.id} className="hover:bg-[#FAF8F2]/60">
-                        <td className="px-4 py-3 font-mono font-bold text-[#24352C]">
-                          {s.receipt_number}
-                        </td>
-                        <td className="px-4 py-3 text-[#5E7166] tabular-nums">
-                          {new Date(s.created_at).toLocaleString('es-AR')}
-                        </td>
-                        <td className="px-4 py-3 font-semibold text-[#24352C]">
-                          {s.customer_name || 'Cliente Ocasional'}
-                        </td>
-                        <td className="px-4 py-3 font-mono capitalize text-[11px] text-[#5E7166]">
-                          {s.payment_method.replace('_', ' ')}
-                        </td>
-                        <td className="px-4 py-3 font-bold text-[#28634C] tabular-nums">
-                          ${s.total_amount.toLocaleString()}
-                        </td>
-                        <td className="px-4 py-3 text-right">
-                          <span className="px-2.5 py-0.5 rounded-lg text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                            Cobrado
-                          </span>
-                        </td>
-                      </tr>
-                    ))
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
-
-      {/* CASH SESSIONS (CAJA DEL DÍA) TAB */}
-      {activeTab === 'cash' && (
-        <div className="space-y-6">
-          {activeSession ? (
-            <div className="bg-white p-6 rounded-3xl border border-[#E8E2D8] shadow-xs space-y-4">
-              <div className="flex items-center justify-between flex-wrap gap-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-700 flex items-center justify-center font-bold border border-emerald-200">
-                    <Unlock className="w-6 h-6" />
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <h3 className="font-bold text-base text-[#24352C]">
-                        Caja Abierta en {currentBranch.name}
-                      </h3>
-                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">
-                        Activa
-                      </span>
-                    </div>
-                    <p className="text-xs text-[#5E7166] mt-0.5">
-                      Abierta el {new Date(activeSession.opened_at).toLocaleString('es-AR')} por {activeSession.opened_by_name}
-                    </p>
-                  </div>
+                    <option value="">Vincular turno (opcional)</option>
+                    {appointments
+                      .filter(
+                        (a) =>
+                          a.branch_id === currentBranch.id &&
+                          ['confirmed', 'checked_in', 'in_progress'].includes(a.status)
+                      )
+                      .map((a) => {
+                        const cust = customers.find((c) => c.id === a.customer_id);
+                        return (
+                          <option key={a.id} value={a.id}>
+                            {new Date(a.starts_at).toLocaleTimeString('es-AR', {
+                              hour: '2-digit',
+                              minute: '2-digit',
+                            })}{' '}
+                            hs - {cust?.full_name || 'Cliente'} (${a.total_amount.toLocaleString()})
+                          </option>
+                        );
+                      })}
+                  </select>
+                  <ChevronDown className="w-4 h-4 text-[#5E7166] absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
                 </div>
 
-                <button
-                  onClick={() => setShowCloseModal(true)}
-                  className="px-5 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs shadow-xs transition cursor-pointer min-h-[44px]"
-                >
-                  Hacer Cierre de Caja
-                </button>
-              </div>
-
-              <div className="p-4 bg-[#FAF8F2] rounded-2xl border border-[#E8E2D8] flex items-center justify-between text-xs">
-                <span className="text-[#5E7166]">Fondo inicial de cambio con el que se abrió:</span>
-                <span className="font-bold text-[#24352C] tabular-nums text-sm">
-                  ${activeSession.initial_amount.toLocaleString()}
-                </span>
-              </div>
-            </div>
-          ) : (
-            <div className="bg-white p-6 rounded-3xl border border-[#E8E2D8] shadow-xs space-y-4 max-w-lg">
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-2xl bg-[#FAF8F2] text-[#5E7166] flex items-center justify-center font-bold border border-[#E8E2D8]">
-                  <Lock className="w-6 h-6" />
-                </div>
-                <div>
-                  <h3 className="font-bold text-base text-[#24352C]">
-                    Caja Cerrada en {currentBranch.name}
-                  </h3>
-                  <p className="text-xs text-[#5E7166]">Abrí una nueva caja diaria para registrar los cobros del turno.</p>
-                </div>
-              </div>
-
-              <div className="space-y-3 pt-2">
-                <div>
-                  <label className="block text-xs font-bold text-[#24352C] mb-1">
-                    Fondo inicial de cambio ($)
-                  </label>
+                <div className="relative">
+                  <Search className="w-4 h-4 text-[#5E7166] absolute left-3 top-1/2 -translate-y-1/2" />
                   <input
-                    type="number"
-                    min={0}
-                    value={openAmount}
-                    onChange={(e) => setOpenAmount(Number(e.target.value))}
-                    className="w-full bg-[#FAF8F2] border border-[#E8E2D8] rounded-xl px-3.5 py-2.5 text-xs sm:text-sm font-bold text-[#24352C] focus:outline-[#28634C]"
+                    type="text"
+                    value={mobileSearch}
+                    onChange={(e) => setMobileSearch(e.target.value)}
+                    placeholder="Buscar un ítem"
+                    className="w-full pl-9 pr-3.5 py-2.5 bg-white border border-[#CCD6D0] rounded-xl text-xs text-[#24352C] placeholder-[#5E7166]/70 focus:outline-[#28634C] shadow-2xs"
                   />
                 </div>
+              </div>
 
+              {/* Row 2: Subtabs (Servicios | Productos) */}
+              <div className="flex gap-2">
                 <button
-                  onClick={() => openCashSession(openAmount, openNotes)}
-                  className="w-full py-3 rounded-xl bg-[#28634C] hover:bg-[#1E4E3B] text-white font-bold text-xs shadow-xs transition cursor-pointer min-h-[44px]"
+                  type="button"
+                  onClick={() => setMobileSubtab('services')}
+                  className={`px-5 py-2 rounded-xl text-xs font-bold transition cursor-pointer ${
+                    mobileSubtab === 'services'
+                      ? 'bg-[#28634C] text-white shadow-xs'
+                      : 'bg-white text-[#5E7166] border border-[#CCD6D0] hover:bg-[#FAF8F2]'
+                  }`}
                 >
-                  Abrir Caja Ahora
+                  Servicios
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setMobileSubtab('products')}
+                  className={`px-5 py-2 rounded-xl text-xs font-bold transition cursor-pointer ${
+                    mobileSubtab === 'products'
+                      ? 'bg-[#28634C] text-white shadow-xs'
+                      : 'bg-white text-[#5E7166] border border-[#CCD6D0] hover:bg-[#FAF8F2]'
+                  }`}
+                >
+                  Productos
+                </button>
+              </div>
+
+              {/* 2-Column Grid of Items (Screen 03 Cards) */}
+              <div className="grid grid-cols-2 gap-3">
+                {mobileSubtab === 'services' ? (
+                  services
+                    .filter(
+                      (s) =>
+                        s.is_active &&
+                        s.name.toLowerCase().includes(mobileSearch.toLowerCase())
+                    )
+                    .map((service) => {
+                      const isChecked = cartItems.some((i) => i.serviceId === service.id);
+
+                      return (
+                        <div
+                          key={service.id}
+                          onClick={() => {
+                            if (isChecked) {
+                              setCartItems((prev) =>
+                                prev.filter((i) => i.serviceId !== service.id)
+                              );
+                            } else {
+                              handleAddService(service.id);
+                            }
+                          }}
+                          className={`p-3.5 rounded-2xl border transition cursor-pointer flex items-center justify-between gap-2.5 shadow-2xs ${
+                            isChecked
+                              ? 'bg-[#FAFDFB] border-[#28634C] ring-1 ring-[#28634C]/20'
+                              : 'bg-white border-[#E8E2D8] hover:border-[#28634C]/40'
+                          }`}
+                        >
+                          <div className="flex items-center gap-2.5 min-w-0">
+                            <div
+                              className={`w-4 h-4 rounded-md flex items-center justify-center shrink-0 transition ${
+                                isChecked
+                                  ? 'bg-[#28634C] text-white'
+                                  : 'border-2 border-[#CCD6D0]'
+                              }`}
+                            >
+                              {isChecked && <Check className="w-3 h-3 stroke-[3]" />}
+                            </div>
+                            <span className="font-bold text-xs text-[#24352C] truncate">
+                              {service.name}
+                            </span>
+                          </div>
+
+                          <div className="flex items-center gap-2 shrink-0">
+                            <span className="font-bold text-xs text-[#24352C] tabular-nums">
+                              ${service.price.toLocaleString()}
+                            </span>
+                            <div className="w-6 h-6 rounded-full border border-[#CCD6D0] flex items-center justify-center text-[#28634C] hover:bg-[#FAF8F2]">
+                              <Plus className="w-3.5 h-3.5" />
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })
+                ) : (
+                  products
+                    .filter((p) =>
+                      p.name.toLowerCase().includes(mobileSearch.toLowerCase())
+                    )
+                    .map((product) => {
+                      const isChecked = cartItems.some((i) => i.productId === product.id);
+
+                      return (
+                        <div
+                          key={product.id}
+                          onClick={() => {
+                            if (isChecked) {
+                              setCartItems((prev) =>
+                                prev.filter((i) => i.productId !== product.id)
+                              );
+                            } else {
+                              handleAddProduct(product.id);
+                            }
+                          }}
+                          className={`p-3.5 rounded-2xl border transition cursor-pointer flex items-center justify-between gap-2.5 shadow-2xs ${
+                            isChecked
+                              ? 'bg-[#FAFDFB] border-[#28634C] ring-1 ring-[#28634C]/20'
+                              : 'bg-white border-[#E8E2D8] hover:border-[#28634C]/40'
+                          }`}
+                        >
+                          <div className="flex items-center gap-2.5 min-w-0">
+                            <div
+                              className={`w-4 h-4 rounded-md flex items-center justify-center shrink-0 transition ${
+                                isChecked
+                                  ? 'bg-[#28634C] text-white'
+                                  : 'border-2 border-[#CCD6D0]'
+                              }`}
+                            >
+                              {isChecked && <Check className="w-3 h-3 stroke-[3]" />}
+                            </div>
+                            <span className="font-bold text-xs text-[#24352C] truncate">
+                              {product.name}
+                            </span>
+                          </div>
+
+                          <div className="flex items-center gap-2 shrink-0">
+                            <span className="font-bold text-xs text-[#24352C] tabular-nums">
+                              ${product.sale_price.toLocaleString()}
+                            </span>
+                            <div className="w-6 h-6 rounded-full border border-[#CCD6D0] flex items-center justify-center text-[#28634C] hover:bg-[#FAF8F2]">
+                              <Plus className="w-3.5 h-3.5" />
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })
+                )}
+              </div>
+            </div>
+
+            {/* Ticket Panel (Right 5 cols) */}
+            <div className="col-span-12 lg:col-span-5">
+              <div className="bg-white rounded-2xl border border-[#E8E2D8] p-5 shadow-xs space-y-4 sticky top-20">
+                <h3 className="font-bold text-base text-[#24352C]">Ticket</h3>
+
+                {/* Cliente Selector */}
+                <div className="space-y-1.5">
+                  <label className="block text-xs text-[#5E7166] font-medium">Cliente</label>
+                  <div className="relative">
+                    <select
+                      value={selectedCustomerId}
+                      onChange={(e) => setSelectedCustomerId(e.target.value)}
+                      className="w-full bg-[#FAF8F2] border border-[#CCD6D0] rounded-xl px-3.5 py-2.5 text-xs text-[#24352C] font-semibold appearance-none focus:outline-[#28634C] cursor-pointer pr-8"
+                    >
+                      <option value="">Cliente Ocasional / Sin asignar</option>
+                      {customers
+                        .filter((c) => c.organization_id === currentOrg.id)
+                        .map((c) => (
+                          <option key={c.id} value={c.id}>
+                            {c.full_name} ({c.phone || 'Sin tel'})
+                          </option>
+                        ))}
+                    </select>
+                    <ChevronDown className="w-4 h-4 text-[#5E7166] absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  </div>
+                </div>
+
+                {/* Ítems del cobro */}
+                <div className="space-y-2 pt-2 border-t border-[#E8E2D8]/60">
+                  <div className="flex items-center justify-between text-xs font-semibold text-[#5E7166]">
+                    <span>Ítems del cobro</span>
+                    <span className="text-[11px]">{cartItems.length} seleccionados</span>
+                  </div>
+
+                  <div className="divide-y divide-[#E8E2D8]/50 max-h-48 overflow-y-auto">
+                    {cartItems.length === 0 ? (
+                      <p className="py-4 text-center text-xs text-[#5E7166]">
+                        No hay ítems en el ticket todavía.
+                      </p>
+                    ) : (
+                      cartItems.map((item, idx) => (
+                        <div
+                          key={idx}
+                          className="flex items-center justify-between py-2 text-xs"
+                        >
+                          <span className="font-medium text-[#24352C] truncate pr-2">
+                            {item.description}
+                          </span>
+                          <div className="flex items-center gap-2 shrink-0">
+                            <span className="font-bold text-[#24352C] tabular-nums">
+                              ${(item.quantity * item.unitPrice).toLocaleString()}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveCartItem(idx)}
+                              className="p-1 text-[#5E7166] hover:text-red-600 transition cursor-pointer"
+                            >
+                              <X className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => setMobileSubtab('services')}
+                    className="flex items-center gap-1 text-xs font-bold text-[#28634C] hover:underline pt-1 cursor-pointer"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>Agregar otro ítem</span>
+                  </button>
+                </div>
+
+                {/* Total */}
+                <div className="pt-3 border-t border-[#E8E2D8] flex items-center justify-between">
+                  <span className="text-sm font-bold text-[#24352C]">Total</span>
+                  <span className="text-2xl font-black text-[#24352C] tabular-nums">
+                    ${finalTotal.toLocaleString()}
+                  </span>
+                </div>
+
+                {/* Medio de pago (2x2 Radio Grid) */}
+                <div className="space-y-2 pt-1 border-t border-[#E8E2D8]/60">
+                  <label className="block text-xs font-bold text-[#24352C]">
+                    Medio de pago
+                  </label>
+                  <div className="grid grid-cols-2 gap-2 text-xs">
+                    {paymentOptions.map((opt) => {
+                      const isSelected = paymentMethod === opt.id;
+                      return (
+                        <label
+                          key={opt.id}
+                          onClick={() => setPaymentMethod(opt.id)}
+                          className={`flex items-center gap-2 p-2 rounded-xl border transition cursor-pointer ${
+                            isSelected
+                              ? 'border-[#28634C] bg-[#FAFDFB]'
+                              : 'border-[#E8E2D8] hover:border-[#CCD6D0]'
+                          }`}
+                        >
+                          <div
+                            className={`w-3.5 h-3.5 rounded-full border-2 flex items-center justify-center ${
+                              isSelected ? 'border-[#28634C]' : 'border-[#CCD6D0]'
+                            }`}
+                          >
+                            {isSelected && (
+                              <div className="w-1.5 h-1.5 rounded-full bg-[#28634C]" />
+                            )}
+                          </div>
+                          <span className="font-semibold text-[#24352C] truncate">
+                            {opt.label}
+                          </span>
+                        </label>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Confirmar Cobro Button */}
+                <button
+                  type="button"
+                  onClick={handleCheckout}
+                  disabled={cartItems.length === 0}
+                  className="w-full py-3.5 rounded-2xl bg-[#28634C] hover:bg-[#1E4E3B] disabled:bg-[#CCD6D0] text-white font-extrabold text-xs shadow-xs active:scale-[0.99] transition cursor-pointer"
+                >
+                  Confirmar cobro - ${finalTotal.toLocaleString()}
                 </button>
               </div>
             </div>
-          )}
+          </div>
+        )}
 
-          {/* Past Sessions */}
+        {/* TAB HISTORIAL DE COBROS */}
+        {activeTab === 'sales' && (
           <div className="bg-white rounded-2xl border border-[#E8E2D8] shadow-xs overflow-hidden">
-            <div className="p-4 border-b border-[#E8E2D8] font-bold text-xs text-[#5E7166] uppercase tracking-wider">
-              Historial de Cierres Anteriores
+            <div className="p-4 border-b border-[#E8E2D8] flex items-center justify-between">
+              <h3 className="font-bold text-sm text-[#24352C]">Historial de Cobros Recientes</h3>
+              <span className="text-xs text-[#5E7166]">
+                {sales.filter((s) => s.branch_id === currentBranch.id).length} operaciones
+              </span>
             </div>
+
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">
-                <thead className="bg-[#FAF8F2] text-[#5E7166] font-bold border-b border-[#E8E2D8]">
+                <thead className="bg-[#FAF8F2] text-[#5E7166] font-semibold border-b border-[#E8E2D8]">
                   <tr>
-                    <th className="px-4 py-3">Apertura</th>
-                    <th className="px-4 py-3">Cierre</th>
-                    <th className="px-4 py-3">Monto Inicial</th>
-                    <th className="px-4 py-3">Esperado</th>
-                    <th className="px-4 py-3">Diferencia</th>
-                    <th className="px-4 py-3 text-right">Estado</th>
+                    <th className="px-5 py-3">Comprobante</th>
+                    <th className="px-4 py-3">Fecha y Hora</th>
+                    <th className="px-4 py-3">Cliente</th>
+                    <th className="px-4 py-3">Medio de Pago</th>
+                    <th className="px-4 py-3 text-right">Total</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[#E8E2D8]">
-                  {cashSessions.filter((s) => s.organization_id === currentOrg.id).length === 0 ? (
-                    <tr>
-                      <td colSpan={6} className="py-8 text-center text-[#5E7166]">
-                        No hay cierres de caja registrados en esta sucursal.
-                      </td>
-                    </tr>
-                  ) : (
-                    cashSessions
-                      .filter((s) => s.organization_id === currentOrg.id)
-                      .map((s) => (
-                        <tr key={s.id}>
-                          <td className="px-4 py-3 text-[#5E7166] tabular-nums">
-                            {new Date(s.opened_at).toLocaleString('es-AR')}
+                  {sales
+                    .filter((s) => s.branch_id === currentBranch.id)
+                    .map((s) => {
+                      const cust = customers.find((c) => c.id === s.customer_id);
+                      return (
+                        <tr key={s.id} className="hover:bg-[#FAF8F2]/60 transition">
+                          <td className="px-5 py-3.5 font-bold font-mono text-[#24352C]">
+                            {s.receipt_number || `#${s.id.slice(-6)}`}
                           </td>
-                          <td className="px-4 py-3 text-[#5E7166] tabular-nums">
-                            {s.closed_at ? new Date(s.closed_at).toLocaleString('es-AR') : '—'}
+                          <td className="px-4 py-3.5 text-[#5E7166]">
+                            {new Date(s.created_at).toLocaleString('es-AR', {
+                              dateStyle: 'short',
+                              timeStyle: 'short',
+                            })}
                           </td>
-                          <td className="px-4 py-3 font-semibold text-[#24352C] tabular-nums">
-                            ${s.initial_amount.toLocaleString()}
+                          <td className="px-4 py-3.5 font-medium text-[#24352C]">
+                            {cust?.full_name || 'Cliente Ocasional'}
                           </td>
-                          <td className="px-4 py-3 text-[#24352C] tabular-nums">
-                            {s.expected_closed_amount ? `$${s.expected_closed_amount.toLocaleString()}` : '—'}
+                          <td className="px-4 py-3.5 capitalize font-medium text-[#5E7166]">
+                            {s.payment_method}
                           </td>
-                          <td className="px-4 py-3 font-bold tabular-nums">
-                            {s.difference_amount !== undefined ? (
-                              <span className={s.difference_amount >= 0 ? 'text-emerald-700' : 'text-red-600'}>
-                                ${s.difference_amount.toLocaleString()}
-                              </span>
-                            ) : (
-                              '—'
-                            )}
-                          </td>
-                          <td className="px-4 py-3 text-right">
-                            <span className="px-2.5 py-0.5 rounded-lg text-[10px] font-semibold capitalize bg-[#FAF8F2] text-[#5E7166] border border-[#E8E2D8]">
-                              {s.status === 'open' ? 'Abierta' : 'Cerrada'}
-                            </span>
+                          <td className="px-4 py-3.5 text-right font-bold text-[#28634C] tabular-nums text-sm">
+                            ${s.final_total.toLocaleString()}
                           </td>
                         </tr>
-                      ))
-                  )}
+                      );
+                    })}
                 </tbody>
               </table>
             </div>
           </div>
-        </div>
-      )}
+        )}
+
+        {/* TAB CAJA DEL DÍA */}
+        {activeTab === 'cash' && (
+          <div className="grid gap-6 lg:grid-cols-12">
+            <div className="lg:col-span-6 bg-white p-6 rounded-2xl border border-[#E8E2D8] shadow-xs space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="font-bold text-base text-[#24352C]">Estado de Caja</h3>
+                  <p className="text-xs text-[#5E7166]">
+                    Sesión activa para {currentBranch.name}
+                  </p>
+                </div>
+                {activeSession ? (
+                  <span className="px-3 py-1 rounded-full bg-emerald-50 text-emerald-800 text-xs font-bold border border-emerald-200">
+                    Abierta
+                  </span>
+                ) : (
+                  <span className="px-3 py-1 rounded-full bg-amber-50 text-amber-800 text-xs font-bold border border-amber-200">
+                    Cerrada
+                  </span>
+                )}
+              </div>
+
+              {activeSession ? (
+                <div className="space-y-4 pt-2">
+                  <div className="grid grid-cols-2 gap-3 text-xs">
+                    <div className="bg-[#FAF8F2] p-3 rounded-xl border border-[#E8E2D8]">
+                      <span className="text-[#5E7166]">Apertura</span>
+                      <p className="text-lg font-bold text-[#24352C] tabular-nums mt-0.5">
+                        ${activeSession.opening_amount.toLocaleString()}
+                      </p>
+                    </div>
+                    <div className="bg-[#FAF8F2] p-3 rounded-xl border border-[#E8E2D8]">
+                      <span className="text-[#5E7166]">Ingresos de Hoy</span>
+                      <p className="text-lg font-bold text-[#28634C] tabular-nums mt-0.5">
+                        ${sales
+                          .filter((s) => s.branch_id === currentBranch.id)
+                          .reduce((sum, s) => sum + s.final_total, 0)
+                          .toLocaleString()}
+                      </p>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => setShowCloseModal(true)}
+                    className="w-full py-3 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-xs shadow-xs transition cursor-pointer"
+                  >
+                    Cerrar y Arqueo de Caja
+                  </button>
+                </div>
+              ) : (
+                <div className="space-y-3 pt-2">
+                  <p className="text-xs text-[#5E7166]">
+                    Abrí la caja con el monto inicial en efectivo para comenzar la jornada.
+                  </p>
+                  <div>
+                    <label className="block text-xs font-bold text-[#24352C] mb-1">
+                      Monto de apertura ($)
+                    </label>
+                    <input
+                      type="number"
+                      value={openAmount}
+                      onChange={(e) => setOpenAmount(Number(e.target.value))}
+                      className="w-full bg-[#FAF8F2] border border-[#CCD6D0] rounded-xl px-3.5 py-2 text-xs font-bold text-[#24352C] focus:outline-[#28634C]"
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => openCashSession(openAmount, openNotes)}
+                    className="w-full py-3 rounded-xl bg-[#28634C] hover:bg-[#1E4E3B] text-white font-bold text-xs shadow-xs transition cursor-pointer"
+                  >
+                    Abrir Caja
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* APPOINTMENT PICKER MODAL (MOBILE) */}
